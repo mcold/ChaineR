@@ -113,8 +113,8 @@ class MainFrame(wx.Frame):
         self.Layout()
         self.menuBar = wx.MenuBar(0)
         self.m_File = wx.Menu()
-        self.m_Create = wx.MenuItem(self.m_File, wx.ID_ANY, u"Create", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_File.Append(self.m_Create)
+        self.m_New = wx.MenuItem(self.m_File, wx.ID_ANY, u"New", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_File.Append(self.m_New)
 
         self.m_Open = wx.MenuItem(self.m_File, wx.ID_ANY, u"Open", wx.EmptyString, wx.ITEM_NORMAL)
 
@@ -144,12 +144,18 @@ class MainFrame(wx.Frame):
 
         #Binding
 
-        self.Bind(wx.EVT_MENU, self.Message, self.m_Exit)
+        self.Bind(wx.EVT_MENU, self.CloseWin, self.m_Exit)
+        self.Bind(wx.EVT_MENU, self.NewFile, self.m_New)
+        self.Bind(wx.EVT_MENU, self.Save, self.m_Save)
         self.Bind(wx.EVT_MENU, self.SaveAs, self.m_SaveAs)
         self.Bind(wx.EVT_MENU, self.OpenFile, self.m_Open)
 
         self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
         self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
+        self.Bind(wx.EVT_BUTTON, self.child_item, self.rightBtn)
+        self.Bind(wx.EVT_BUTTON, self.parent_item, self.leftBtn)
+
+        self.Bind(wx.EVT_CLOSE, self.CloseWin)
 
     def __del__(self):
         pass
@@ -164,44 +170,92 @@ class MainFrame(wx.Frame):
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.file = dlg.GetPath()
-            with open(self.file, "rb") as handle:
-                self.txt = handle.read()
+            with open(self.file, "rb") as f:
+                txt = f.readlines()
+                #txt = txt.split('\n')
+                d = dict()
+                for i in range(len(txt)):
+                    # split line
+                    l = txt[i].split('\t')
+                    k = l[0]
+                    # summon data for dict
+                    l_val = list()
+                    l_val.append(l[1].strip())
+                    l_val.append(l[2].strip())
+                    d[k] = l_val
+                self.d = d
+        else:
+            dlg.Destroy()
+            return
+
                 #self.txt = text
-                ### TODO: self.file
                 #self.file = path
-                print self.txt
-                print self.file
+                #print self.txt
+                #print self.file
         dlg.Destroy()
 
-    def CreateFile(self, e):
-        dlg = wx.FileDialog(self, "Create File",
+        k = self.find_minimal()
+        self.n = 1
+        self.n_parent = k.rpartition(':')[0]
+        self.set_value(self.n_parent, self.n)
+
+
+    def NewFile(self, e):
+        """
+        Create new File
+        if fact just clear controlls
+        :param e: 
+        :return: 
+        """
+
+        #dlg = wx.FileDialog(self, "Create File",
      #                       wildcard=self.wildcard,
-                            style=wx.FD_SAVE)
+         #                   style=wx.FD_SAVE)
                             #style=wx.FD_OPEN)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.file = dlg.GetPath()
-            with open(self.file, "rb") as handle:
-                #text = handle.read()
-                #self.txt.SetValue(text)
-                # self.file = path
-                print self.txt
-                print self.file
+        #print(dlg)
+        #if dlg.ShowModal() == wx.ID_OK:
+        #    self.file = dlg.GetPath()
+        #dlg.Destroy()
 
-        dlg.Destroy()
+        # clear all
+        self.clear_controls()
+        self.d = dict()
 
-    def SaveAs(self, e):
+    def Save(self, e=0):
+        """
+        Save data
+        :param e: 
+        :return: 
+        """
+        # add item if it is
+        self.add_item()
+
+        if self.file == "":
+            self.SaveAs()
+            return
+        with open(self.file, "w") as f:
+            for k, v in self.d.items():
+                s = k + '\t' + v[0] + '\t' + v[1] + '\n'
+                f.write(s.encode('utf-8'))
+
+    def SaveAs(self, e=0):
         """
         Save data
         :param e: nothing 
         :return: 
         """
+        # add item if it is
+        self.add_item()
+
         style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
         dlg = wx.FileDialog(self, "Save As",
                                 style=style)
         if dlg.ShowModal() == wx.ID_OK:
             self.file = dlg.GetPath()
-        # TODO: save data
-        # self.WriteToDisk(self.file)
+        with open(self.file, "w") as f:
+            for k, v in self.d.items():
+                s = k + '\t' + v[0] + '\t' + v[1] + '\n'
+                f.write(s.encode('utf-8'))
         dlg.Destroy()
         self.print_data()
 
@@ -266,6 +320,52 @@ class MainFrame(wx.Frame):
         #else:
         #    self.clear_controls()
 
+
+    def child_item(self, e=0):
+        # restrain if null
+        if self.second_main_text.Value == '':
+            return
+
+        # write
+        self.add_item()
+
+        # clear
+        self.clear_controls()
+
+        # change parent
+        self.n_parent = str(self.n_parent) + ":" + str(self.n)
+        # change item
+        self.n = 1
+
+        # test if it is
+        mask = str(self.n_parent) + ":" + str(self.n)
+        if self.d.get(mask):
+            self.set_value(self.n_parent, self.n)
+        return
+        # take child as first
+
+
+    def parent_item(self, e=0):
+        # restrain if first
+        if len(str(self.n_parent)) == 1:
+            return
+
+        # write
+        self.add_item()
+
+        # clear
+        self.clear_controls()
+
+        # take current
+        self.n = int(self.n_parent.rpartition(':')[-1])
+
+        # take parent
+        self.n_parent = self.n_parent.rpartition(':')[0]
+
+        self.set_value(self.n_parent, self.n)
+        return
+
+
     def add_item(self):
         if self.second_main_text.Value:
             item = self.second_main_text.Value
@@ -284,9 +384,6 @@ class MainFrame(wx.Frame):
         self.second_mnemo_text.SetValue(self.d[mask][1])
         #self.second_main_text.SetValue(self.d[self.n][3])
         #self.second_mnemo_text.SetValue(self.d[self.n][4])
-
-    def go_child(self):
-        self.n_parent = self.n
 
 
     def find_next(self):
@@ -336,7 +433,47 @@ class MainFrame(wx.Frame):
             n = max(l) + 1
         return n
 
+    def find_minimal(self):
+        """
+        Find minimal level & minimal number of this level
+        :return: key of dictionary
+        """
+        ex = [0, 0] # key & length
+        # find minimal level
+        for k, v in self.d.items():
+            try:
+                l = k.split(':')
+            except:
+                l = k
+            if ex[0] == 0:
+                ex[0] = k
+                ex[1] = len(l)
+                continue
+            if len(l) < ex[1]:
+                ex[0] = k
+                ex[1] = len(l)
+        return ex[0]
+
+    def find_parent(self):
+        """
+        Find parent for element
+        :return: 
+        """
+        pass
+
+
     def clear_controls(self):
         self.second_main_text.Clear()
         self.second_mnemo_text.Clear()
 
+    def CloseWin(self, e=0):
+        """
+        Close program
+        :return: 
+        """
+        # TODO: dialog to write changes
+        # test on empty
+        self.add_item()
+        if not len(self.d) == 0:
+            self.Save()
+        self.Destroy()

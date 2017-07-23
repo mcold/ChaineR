@@ -34,12 +34,20 @@ class MainFrame(wx.Frame):
 
 
 
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"Chainer", pos=wx.DefaultPosition, size=wx.Size(591, 260),
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"Chainer", pos=wx.DefaultPosition, size=wx.Size(591,275),
                           style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
         wxSizer = wx.WrapSizer(wx.HORIZONTAL)
+
+        filterSizer = wx.GridSizer(0, 2, 0, 0)
+
+        self.m_Filter = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(200, -1), 0)
+        filterSizer.Add(self.m_Filter, 0, wx.ALL, 5)
+
+        wxSizer.Add(filterSizer, 1, wx.EXPAND, 5)
+
         # wxSizer.AddSpacer(0)
         upSizer = wx.FlexGridSizer(0, 2, 0, 0)
         upSizer.Add(wx.Size(220, 0))
@@ -64,7 +72,7 @@ class MainFrame(wx.Frame):
         self.leftBtn = wx.Button(self, wx.ID_ANY, u"<", wx.DefaultPosition, wx.DefaultSize, 0)
         leftSizer.Add(self.leftBtn, 0, wx.ALL, 5)
 
-        self.second_main_text = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), 0)
+        self.second_main_text = wx.TextCtrl(self, 1, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), 0)
         leftSizer.Add(self.second_main_text, 0, wx.ALL, 5)
 
         leftSizer.AddSpacer(0)
@@ -85,7 +93,7 @@ class MainFrame(wx.Frame):
 
         rightSizer.AddSpacer(1)
 
-        self.second_mnemo_text = wx.TextCtrl(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), 0)
+        self.second_mnemo_text = wx.TextCtrl(self, 2, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), 0)
         rightSizer.Add(self.second_mnemo_text, 0, wx.ALL, 5)
 
         self.rightBtn = wx.Button(self, wx.ID_ANY, u">", wx.DefaultPosition, wx.DefaultSize, 0)
@@ -106,6 +114,9 @@ class MainFrame(wx.Frame):
 
         self.down_Btn = wx.Button(self, wx.ID_ANY, u"v", wx.DefaultPosition, wx.Size(100, -1), 0)
         downSizer.Add(self.down_Btn, 0, wx.ALL, 5)
+
+        self.m_Mnemo = wx.CheckBox(self, wx.ID_ANY, u"Mnemo", wx.DefaultPosition, wx.DefaultSize, 0)
+        downSizer.Add(self.m_Mnemo, 0, wx.ALL, 5)
 
         wxSizer.Add(downSizer, 1, wx.EXPAND, 5)
 
@@ -133,12 +144,26 @@ class MainFrame(wx.Frame):
 
         self.menuBar.Append(self.m_File, u"File")
 
-        self.m_About = wx.Menu()
 
+        self.Tree = wx.Menu()
+
+        self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Append Branch", wx.EmptyString, wx.ITEM_NORMAL)
+        self.Tree.Append(self.m_AppendBranch)
+        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Branch", wx.EmptyString, wx.ITEM_NORMAL)
+        self.Tree.Append(self.m_DeleteBranch)
+        self.m_DeleteItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete", wx.EmptyString, wx.ITEM_NORMAL)
+        self.Tree.Append(self.m_DeleteItem)
+        self.m_InsertItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Insert", wx.EmptyString, wx.ITEM_NORMAL)
+        self.Tree.Append(self.m_InsertItem)
+
+        self.menuBar.Append(self.Tree, "Tree")
+        self.SetMenuBar(self.menuBar)
+
+        self.m_About = wx.Menu()
+        self.m_About_Description = wx.MenuItem(self.m_About, wx.ID_ANY, u"About program", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_About.Append(self.m_About_Description)
         self.menuBar.Append(self.m_About, "About")
         # aboutItem = self.menuBar.Append(self.m_About, u"About")
-
-        self.SetMenuBar(self.menuBar)
 
         self.Centre(wx.BOTH)
 
@@ -150,6 +175,11 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.SaveAs, self.m_SaveAs)
         self.Bind(wx.EVT_MENU, self.OpenFile, self.m_Open)
 
+        self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
+        self.Bind(wx.EVT_MENU, self.insert_branch, self.m_AppendBranch)
+        self.Bind(wx.EVT_MENU, self.insert_item, self.m_InsertItem)
+        self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
+
         self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
         self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
         self.Bind(wx.EVT_BUTTON, self.child_item, self.rightBtn)
@@ -157,6 +187,22 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_CLOSE, self.CloseWin)
 
+        # Connect Enter Events
+        self.m_Filter.Bind(wx.EVT_TEXT_ENTER, self.find_item)
+        self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
+        self.second_mnemo_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
+
+        order = (self.second_main_text, self.second_mnemo_text)
+        for i in xrange(len(order) - 1):
+            order[i + 1].MoveAfterInTabOrder(order[i])
+
+        s = u"Test"
+        self.first_main.SetLabelText(s)
+        self.third_main.SetLabelText(s)
+        self.first_mnemo.SetLabelText(s)
+        self.third_mnemo.SetLabelText(s)
+        # Key Down & Up
+        #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.next_item)
     def __del__(self):
         pass
 
@@ -188,10 +234,6 @@ class MainFrame(wx.Frame):
             dlg.Destroy()
             return
 
-                #self.txt = text
-                #self.file = path
-                #print self.txt
-                #print self.file
         dlg.Destroy()
 
         k = self.find_minimal()
@@ -477,3 +519,82 @@ class MainFrame(wx.Frame):
         if not len(self.d) == 0:
             self.Save()
         self.Destroy()
+
+    def find_item_test(self, e=0):
+        l_name = self.m_Filter.Value
+        l_d = list()
+        for k, v in self.d.items():
+            l_d.append(v[0])
+            l_d.append(v[1])
+        for i in range(len(l_d)):
+            set_d = set(l_d[i])  # set of each element of dictionary
+            for j in range(len(l_name)):
+                set_l = set(l_name[j])
+                inter = set_d.intersection(set_l)
+                l_i = len(inter)
+                if len(inter) == len(set(l_name[j])):
+                    for k, v in self.d.items():
+                        if v[0] == l_d[i] or v[1] == l_d[i]:
+                            res = k  # take key
+                   # print("id: " + str(k) + " name: " + l_d[i] + " for data: " + l_name[j])
+        self.set_value(res.rpartition(':')[0], res.rpartition(':')[-1])
+        self.n_parent = res.rpartition(':')[0]
+        self.n = res.rpartition(':')[-1]
+        return
+
+    def find_item(self, e=0):
+        self.add_item()
+        l_name = self.m_Filter.Value
+        for k, v in self.d.items():
+            ### TODO: problem with coding
+            try:
+                v1 = v[0].decode('utf-8')
+                v2 = v[1].decode('utf-8')
+                if v1.find(l_name) > -1 or v2.find(l_name) > -1:
+                        self.set_value(k.rpartition(':')[0], k.rpartition(':')[-1])
+                        self.n_parent = k.rpartition(':')[0]
+                        self.n = int(k.rpartition(':')[-1])
+            except:
+                pass
+        return
+
+    def insert_branch(self, e=0):
+        dlg = wx.FileDialog(self, "Open File",
+                            #                       wildcard=self.wildcard,
+                            style=wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            file = dlg.GetPath()
+            with open(file, "rb") as f:
+                txt = f.readlines()
+                # txt = txt.split('\n')
+                d = dict()
+                for i in range(len(txt)):
+                    # split line
+                    l = txt[i].split('\t')
+                    k = str(self.n_parent) + ':' + str(self.n) + ':' + str(l[0])
+                    # summon data for dict
+                    l_val = list()
+                    l_val.append(l[1].strip())
+                    l_val.append(l[2].strip())
+                    self.d[k] = l_val
+                #self.d = d
+        else:
+            dlg.Destroy()
+            return
+
+        dlg.Destroy()
+        return
+
+    def delete_branch(self, e=0):
+        d = dict()
+        for k, v in self.d.items():
+            if k.startswith(self.n):
+                self.d.popitem()
+        # TODO: delete current item
+
+    def insert_item(self, e=0):
+        pass
+
+    def delete_item(self, e=0):
+        pass
+

@@ -159,6 +159,14 @@ class MainFrame(wx.Frame):
         self.menuBar.Append(self.Tree, "Tree")
         self.SetMenuBar(self.menuBar)
 
+        self.m_Options = wx.Menu()
+        self.m_Configuration= wx.MenuItem(self.m_Options, wx.ID_ANY, u"Configuration", wx.EmptyString,
+                                               wx.ITEM_NORMAL)
+        self.m_Options.Append(self.m_Configuration)
+        ### TODO: option - open last file
+        ### TODO: in menu file show last files
+        self.menuBar.Append(self.m_Options, "Options")
+
         self.m_About = wx.Menu()
         self.m_About_Description = wx.MenuItem(self.m_About, wx.ID_ANY, u"About program", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_About.Append(self.m_About_Description)
@@ -192,9 +200,7 @@ class MainFrame(wx.Frame):
         self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
         self.second_mnemo_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
 
-        order = (self.second_main_text, self.second_mnemo_text)
-        for i in xrange(len(order) - 1):
-            order[i + 1].MoveAfterInTabOrder(order[i])
+        self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.set_value)
 
         #s = u"Test"
         #self.first_main.SetLabelText(s)
@@ -204,6 +210,9 @@ class MainFrame(wx.Frame):
         # Key Down & Up
         #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.next_item)
 
+        # Load file by default
+        self.LoadFile()
+
         # set arrows
         self.set_arrows()
 
@@ -211,19 +220,54 @@ class MainFrame(wx.Frame):
     def __del__(self):
         pass
 
-    def Message(self, e):
+    def Message(self, e=0):
         wx.MessageBox("Hello people!!!", "wxApp")
         return True
 
-    def OpenFile(self, e):
+    def OpenFile_First(self, e=0):
+        """
+        Open choosen file
+        :param e: 
+        :return: 
+        """
+        with open(self.file, "rb") as f:
+            txt = f.readlines()
+            # txt = txt.split('\n')
+            d = dict()
+            for i in range(len(txt)):
+                # split line
+                l = txt[i].split('\t')
+                k = l[0]
+                # summon data for dict
+                l_val = list()
+                l_val.append(l[1].strip())
+                l_val.append(l[2].strip())
+                d[k] = l_val
+            self.d = d
+
+
+        k = self.find_minimal()
+        self.n = 1
+        self.n_parent = k.rpartition(':')[0]
+        self.set_value(self.n_parent, self.n)
+
+        # Raname Title of window
+        self.SetTitle("Chainer - {0}".format(self.file))
+
+    def OpenFile(self, e=0):
+        """
+        Open choosen file
+        :param e: 
+        :return: 
+        """
         dlg = wx.FileDialog(self, "Open File",
-     #                       wildcard=self.wildcard,
+                            #                       wildcard=self.wildcard,
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.file = dlg.GetPath()
             with open(self.file, "rb") as f:
                 txt = f.readlines()
-                #txt = txt.split('\n')
+                # txt = txt.split('\n')
                 d = dict()
                 for i in range(len(txt)):
                     # split line
@@ -246,8 +290,23 @@ class MainFrame(wx.Frame):
         self.n_parent = k.rpartition(':')[0]
         self.set_value(self.n_parent, self.n)
 
+        # Raname Title of window
+        self.SetTitle("Chainer - {0}".format(self.file))
 
-    def NewFile(self, e):
+    def LoadFile(self, e=0):
+        """
+        Load file by default
+        :param e: 
+        :return: 
+        """
+        try:
+            with open(r'Options.txt', "rb") as f:
+                self.file = f.readline().strip()
+                self.OpenFile_First()
+        except:
+            pass
+
+    def NewFile(self, e=0):
         """
         Create new File
         if fact just clear controlls
@@ -320,7 +379,7 @@ class MainFrame(wx.Frame):
         #print "data dict: " + str(self.d)
         #print "file: " + self.file
         #print "content: " + self.txt
-        print(self.n)
+        #print(self.n)
         # print "n: " + str(self.n) + " parent: " + str(self.d[self.n][0]) + " previous: " + str(self.d[self.n][1]) + " mext: " + str(self.d[self.n][2]) + " item: " + str(self.d[self.n][3]) + " mnemo: " + str(self.d[self.n][4])
 
     def next_item(self, e=0):
@@ -339,6 +398,7 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n + 1
             self.set_value(self.n_parent, self.n)
+            self.rightBtn.Enable()
         else:
             try:
                 self.n = self.find_next()
@@ -363,6 +423,7 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n
             self.set_value(self.n_parent, self.n)
+            self.leftBtn.Enable()
         #else:
         #    self.n = self.find_prev()
         #else:
@@ -427,6 +488,12 @@ class MainFrame(wx.Frame):
             return
 
     def set_value(self, parent, n_item):
+        """
+        Set values of controlls
+        :param parent: 
+        :param n_item: 
+        :return: 
+        """
         try:
             mask = str(parent) + ":" + str(n_item)
             self.second_main_text.SetValue(self.d[mask][0])
@@ -440,14 +507,49 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.first_main.SetLabelText(self.d[mask][0])
             self.first_mnemo.SetLabelText(self.d[mask][1])
+            self.upBtn.Enable()
 
         # find next
         mask = str(self.n_parent) + ":" + str(self.n + 1)
         if self.d.get(mask):
             self.third_main.SetLabelText(self.d[mask][0])
             self.third_mnemo.SetLabelText(self.d[mask][1])
+            self.down_Btn.Enable()
         # set arrows
         self.set_arrows()
+        self.cond_mnemo()
+
+    def set_value_without_mnemo(self, parent, n_item):
+        """
+        Set values in controlls without mnemo check
+        Use just for changes of checkbox mnemo
+        :param parent: 
+        :param n_item: 
+        :return: 
+        """
+        try:
+            mask = str(parent) + ":" + str(n_item)
+            self.second_main_text.SetValue(self.d[mask][0])
+            self.second_mnemo_text.SetValue(self.d[mask][1])
+        #self.second_main_text.SetValue(self.d[self.n][3])
+        #self.second_mnemo_text.SetValue(self.d[self.n][4])
+        except:
+            pass
+        # find previous
+        mask = str(self.n_parent) + ":" + str(self.n - 1)
+        if self.d.get(mask):
+            self.first_main.SetLabelText(self.d[mask][0])
+            self.first_mnemo.SetLabelText(self.d[mask][1])
+            self.upBtn.Enable()
+        # find next
+        mask = str(self.n_parent) + ":" + str(self.n + 1)
+        if self.d.get(mask):
+            self.third_main.SetLabelText(self.d[mask][0])
+            self.third_mnemo.SetLabelText(self.d[mask][1])
+            self.down_Btn.Enable()
+        # set arrows
+        self.set_arrows()
+
 
     def find_next(self):
         """
@@ -544,6 +646,10 @@ class MainFrame(wx.Frame):
         self.add_item()
         if not len(self.d) == 0:
             self.Save()
+        with open(r'Options.txt', "w") as f:
+            f.write(self.file.encode('utf-8'))
+        # save in options last file
+
         self.Destroy()
 
     def find_item_test(self, e=0):
@@ -641,7 +747,12 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.down_Btn.SetLabelText("v")
         else:
-            self.down_Btn.SetLabelText("+")
+            if not self.m_Mnemo.Value:
+                self.down_Btn.SetLabelText("+")
+                self.down_Btn.Enable()
+            else:
+                self.down_Btn.SetLabelText("")
+                self.down_Btn.Disable()
 
         # left
         mask = str(self.n_parent)
@@ -658,7 +769,28 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.rightBtn.SetLabelText(">")
         else:
-            self.rightBtn.SetLabelText("+")
+            if not self.m_Mnemo.Value:
+                self.rightBtn.SetLabelText("+")
+                self.rightBtn.Enable()
+            else:
+                self.rightBtn.SetLabelText("")
+                self.rightBtn.Disable()
 
+
+    def cond_mnemo(self, e=0):
+        ### TODO: retype - something wrong
+        """
+        React on press mnemo checkbox
+        :param e: 
+        :return: 
+        """
+        if self.m_Mnemo.Value:
+            self.first_mnemo.SetLabelText("")
+            self.second_mnemo_text.SetValue("")
+            self.second_mnemo_text.Disable()
+            self.third_mnemo.SetLabelText("")
+        else:
+            self.second_mnemo_text.Enable()
+            self.set_value_without_mnemo(self.n_parent, self.n)
 
 

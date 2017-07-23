@@ -196,13 +196,18 @@ class MainFrame(wx.Frame):
         for i in xrange(len(order) - 1):
             order[i + 1].MoveAfterInTabOrder(order[i])
 
-        s = u"Test"
-        self.first_main.SetLabelText(s)
-        self.third_main.SetLabelText(s)
-        self.first_mnemo.SetLabelText(s)
-        self.third_mnemo.SetLabelText(s)
+        #s = u"Test"
+        #self.first_main.SetLabelText(s)
+        #self.third_main.SetLabelText(s)
+        #self.first_mnemo.SetLabelText(s)
+        #self.third_mnemo.SetLabelText(s)
         # Key Down & Up
         #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.next_item)
+
+        # set arrows
+        self.set_arrows()
+
+
     def __del__(self):
         pass
 
@@ -337,6 +342,7 @@ class MainFrame(wx.Frame):
         else:
             try:
                 self.n = self.find_next()
+                self.set_value(self.n_parent, self.n)
             except:
                 pass
         return
@@ -421,12 +427,27 @@ class MainFrame(wx.Frame):
             return
 
     def set_value(self, parent, n_item):
-        mask = str(parent) + ":" + str(n_item)
-        self.second_main_text.SetValue(self.d[mask][0])
-        self.second_mnemo_text.SetValue(self.d[mask][1])
+        try:
+            mask = str(parent) + ":" + str(n_item)
+            self.second_main_text.SetValue(self.d[mask][0])
+            self.second_mnemo_text.SetValue(self.d[mask][1])
         #self.second_main_text.SetValue(self.d[self.n][3])
         #self.second_mnemo_text.SetValue(self.d[self.n][4])
+        except:
+            pass
+        # find previous
+        mask = str(self.n_parent) + ":" + str(self.n - 1)
+        if self.d.get(mask):
+            self.first_main.SetLabelText(self.d[mask][0])
+            self.first_mnemo.SetLabelText(self.d[mask][1])
 
+        # find next
+        mask = str(self.n_parent) + ":" + str(self.n + 1)
+        if self.d.get(mask):
+            self.third_main.SetLabelText(self.d[mask][0])
+            self.third_mnemo.SetLabelText(self.d[mask][1])
+        # set arrows
+        self.set_arrows()
 
     def find_next(self):
         """
@@ -505,8 +526,13 @@ class MainFrame(wx.Frame):
 
 
     def clear_controls(self):
+        self.first_main.SetLabelText("")
+        self.first_mnemo.SetLabelText("")
         self.second_main_text.Clear()
         self.second_mnemo_text.Clear()
+        self.third_main.SetLabelText("")
+        self.third_mnemo.SetLabelText("")
+
 
     def CloseWin(self, e=0):
         """
@@ -597,4 +623,42 @@ class MainFrame(wx.Frame):
 
     def delete_item(self, e=0):
         pass
+
+    def set_arrows(self):
+        """
+        Set labels of arrows
+        :return: 
+        """
+        # Up
+        mask = str(self.n_parent) + ":" + str(self.n - 1)
+        if self.d.get(mask):
+            self.upBtn.SetLabelText("^")
+        else:
+            self.upBtn.SetLabelText("")
+
+        # down
+        mask = str(self.n_parent) + ":" + str(self.n + 1)
+        if self.d.get(mask):
+            self.down_Btn.SetLabelText("v")
+        else:
+            self.down_Btn.SetLabelText("+")
+
+        # left
+        mask = str(self.n_parent)
+        if not self.n_parent == 0:
+            if self.d.get(mask):
+                self.leftBtn.SetLabelText("<")
+            else:
+                self.leftBtn.SetLabelText("")
+        else:
+            self.leftBtn.SetLabelText("")
+
+        # right
+        mask = str(self.n_parent) + ":" + str(self.n) + ":" + str(1)
+        if self.d.get(mask):
+            self.rightBtn.SetLabelText(">")
+        else:
+            self.rightBtn.SetLabelText("+")
+
+
 

@@ -167,6 +167,22 @@ class MainFrame(wx.Frame):
         ### TODO: in menu file show last files
         self.menuBar.Append(self.m_Options, "Options")
 
+        self.m_GoTo = wx.Menu()
+        self.m_First = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"First", wx.EmptyString,
+                                   wx.ITEM_NORMAL)
+        self.m_GoTo.Append(self.m_First)
+        self.m_Last = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"Last", wx.EmptyString,
+                                               wx.ITEM_NORMAL)
+        self.m_GoTo.Append(self.m_Last)
+
+        self.menuBar.Append(self.m_GoTo, "GoTo")
+
+        self.m_Add = wx.Menu()
+        self.m_add_before = wx.MenuItem(self.m_Add, wx.ID_ANY, u"Add before", wx.EmptyString,
+                                  wx.ITEM_NORMAL)
+        self.m_Add.Append(self.m_add_before)
+        self.menuBar.Append(self.m_Add, "Add")
+
         self.m_About = wx.Menu()
         self.m_About_Description = wx.MenuItem(self.m_About, wx.ID_ANY, u"About program", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_About.Append(self.m_About_Description)
@@ -188,12 +204,18 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.insert_item, self.m_InsertItem)
         self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
 
+        #self.Bind(wx.EVT_MENU, self., self.m_DeleteItem)
+
+
         self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
         self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
         self.Bind(wx.EVT_BUTTON, self.child_item, self.rightBtn)
         self.Bind(wx.EVT_BUTTON, self.parent_item, self.leftBtn)
 
-        self.Bind(wx.EVT_CLOSE, self.CloseWin)
+        self.Bind(wx.EVT_MENU, self.add_new, self.m_add_before)
+
+        self.Bind(wx.EVT_MENU, self.go_first, self.m_First)
+        self.Bind(wx.EVT_MENU, self.go_last, self.m_Last)
 
         # Connect Enter Events
         self.m_Filter.Bind(wx.EVT_TEXT_ENTER, self.find_item)
@@ -211,7 +233,7 @@ class MainFrame(wx.Frame):
         #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.next_item)
 
         # Load file by default
-        self.LoadFile()
+        #self.LoadFile()
 
         # set arrows
         self.set_arrows()
@@ -481,15 +503,15 @@ class MainFrame(wx.Frame):
         return
 
 
-    def add_item(self):
-        if self.second_main_text.Value:
+    def add_item(self, b_empty=False):
+        if self.second_main_text.Value or b_empty:
             item = self.second_main_text.Value
             mnemo = self.second_mnemo_text.Value
             l = [item, mnemo]
             mask = str(self.n_parent) + ":" + str(self.n)
             # add data
             self.d[mask] = l
-            self.print_data()
+            #self.print_data()
         else:
             return
 
@@ -502,7 +524,8 @@ class MainFrame(wx.Frame):
         """
         try:
             mask = str(parent) + ":" + str(n_item)
-            self.second_main_text.SetValue(self.d[mask][0])
+            ss = self.d[mask][0]
+            self.second_main_text.SetValue(ss)
             self.second_mnemo_text.SetValue(self.d[mask][1])
         #self.second_main_text.SetValue(self.d[self.n][3])
         #self.second_mnemo_text.SetValue(self.d[self.n][4])
@@ -518,12 +541,14 @@ class MainFrame(wx.Frame):
         # find next
         mask = str(self.n_parent) + ":" + str(self.n + 1)
         if self.d.get(mask):
-            self.third_main.SetLabelText(self.d[mask][0])
-            self.third_mnemo.SetLabelText(self.d[mask][1])
+            s1 = self.d[mask][0]
+            s2 = self.d[mask][1]
+            self.third_main.SetLabelText(s1)
+            self.third_mnemo.SetLabelText(s2)
             self.down_Btn.Enable()
         # set arrows
         self.set_arrows()
-        self.cond_mnemo()
+        #self.cond_mnemo()
 
     def set_value_without_mnemo(self, parent, n_item):
         """
@@ -754,7 +779,7 @@ class MainFrame(wx.Frame):
             self.down_Btn.SetLabelText("v")
         else:
             if not self.m_Mnemo.Value:
-                self.down_Btn.SetLabelText("+")
+                self.down_Btn.SetLabelText("")
                 self.down_Btn.Enable()
             else:
                 self.down_Btn.SetLabelText("")
@@ -776,7 +801,7 @@ class MainFrame(wx.Frame):
             self.rightBtn.SetLabelText(">")
         else:
             if not self.m_Mnemo.Value:
-                self.rightBtn.SetLabelText("+")
+                self.rightBtn.SetLabelText("")
                 self.rightBtn.Enable()
             else:
                 self.rightBtn.SetLabelText("")
@@ -797,6 +822,146 @@ class MainFrame(wx.Frame):
             self.third_mnemo.SetLabelText("")
         else:
             self.second_mnemo_text.Enable()
-            self.set_value_without_mnemo(self.n_parent, self.n)
+            #self.set_value_without_mnemo(self.n_parent, self.n)
+
+    def add_new(self, e=0):
+        """
+        Adding new item above chosen
+        :return:
+        """
+        # clean controlls
+        self.clear_controls()
+
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        # find level of current item
+        level = len(str(self.n_parent).split(":"))+1
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and num >= int(self.n):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level-1]) + 1
+
+                # summon key
+                s_first = ""                 # first part of string
+                s_last = ""                  # last part of string
+                for i in range(0, level-1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+        # write data from dictionary even that current element is empty
+        self.add_item(True)
+        self.set_value(self.n_parent, self.n)
+
+    def go_last(self, e=0):
+        """
+        Find last item of current level
+        :return:
+        """
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+
+        l_elem = list()
+        for k, v in self.d.items():
+            if len(str(k).split(":")) == level and str(k).startswith(self.n_parent):
+                elem = str(k).split(":")[-1]
+                l_elem.append(int(elem))
+        m = max(l_elem)
+        # summont string
+        #ss = str(self.n_parent) + ":" + str(m)
+        self.clear_controls()
+        self.n = m
+        self.set_value(self.n_parent, str(m))
+
+
+    def go_first(self, e=0):
+        """
+                Find first item of current level
+                :return:
+                """
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+
+        l_elem = list()
+        for k, v in self.d.items():
+            if len(str(k).split(":")) == level and str(k).startswith(self.n_parent):
+                elem = str(k).split(":")[-1]
+                l_elem.append(int(elem))
+        m = min(l_elem)
+        self.clear_controls()
+        self.n = m
+        self.set_value(self.n_parent, str(m))
+
+    def delete_item(self, e=0):
+        # clean controlls
+        self.clear_controls()
+
+        # to add above
+
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+        # find items that level with higher number
+        for k, v in self.d.items():
+            if len(str(k).split(":")) >= level:
+                l_elem = str(k).split(":")
+                num = int(l_elem[level]) + 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level + 1, len(l_elem)):
+                        s_last = s_last + l_elem[i]
+                except:
+                    pass
+
+                # summon
+                s_summon = str(s_first) + str(num) + str(s_last)
+
+                # write to dictionary
+                d[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+
+        # write data from dictionary even that current element is empty
+        self.set_value()
+
+
+
+    def delete_branch(self, e=0):
+
+
+        # delete items
+
+
+        # set
+        self.set_value(self.n_parent, self.n)
+
 
 

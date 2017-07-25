@@ -264,8 +264,8 @@ class MainFrame(wx.Frame):
                             #                       wildcard=self.wildcard,
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            self.file = dlg.GetPath()
-            with open(self.file, "rb") as f:
+            self.file = dlg.GetPath().encode('utf-8')
+            with open(self.file.decode('utf-8'), "rb") as f:
                 txt = f.readlines()
                 # txt = txt.split('\n')
                 d = dict()
@@ -285,7 +285,7 @@ class MainFrame(wx.Frame):
 
         dlg.Destroy()
 
-        k = self.find_minimal()
+        k = str(self.find_minimal())
         self.n = 1
         self.n_parent = k.rpartition(':')[0]
         self.set_value(self.n_parent, self.n)
@@ -326,6 +326,9 @@ class MainFrame(wx.Frame):
         # clear all
         self.clear_controls()
         self.d = dict()
+        # Raname Title of window
+        self.file = ""
+        self.SetTitle("Chainer")
 
     def Save(self, e=0):
         """
@@ -358,6 +361,8 @@ class MainFrame(wx.Frame):
                                 style=style)
         if dlg.ShowModal() == wx.ID_OK:
             self.file = dlg.GetPath()
+            # Raname Title of window
+            self.SetTitle("Chainer - {0}".format(self.file))
         with open(self.file, "w") as f:
             for k, v in self.d.items():
                 s = k + '\t' + v[0] + '\t' + v[1] + '\n'
@@ -450,6 +455,7 @@ class MainFrame(wx.Frame):
         mask = str(self.n_parent) + ":" + str(self.n)
         if self.d.get(mask):
             self.set_value(self.n_parent, self.n)
+        self.set_arrows()
         return
         # take child as first
 
@@ -615,7 +621,7 @@ class MainFrame(wx.Frame):
                 ex[1] = len(l)
                 continue
             if len(l) < ex[1]:
-                ex[0] = k
+                ex[0] = str(k)
                 ex[1] = len(l)
         return ex[0]
 

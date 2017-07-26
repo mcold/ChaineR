@@ -139,6 +139,16 @@ class MainFrame(wx.Frame):
 
         self.m_File.AppendSeparator()
 
+        ### TODO: realize
+        self.m_Import_Trl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Import Treeline", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_File.Append(self.m_Import_Trl)
+
+        ### TODO: realize
+        self.m_ExportTrl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Treeline", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_File.Append(self.m_ExportTrl)
+
+        self.m_File.AppendSeparator()
+
         self.m_Exit = wx.MenuItem(self.m_File, wx.ID_ANY, u"Exit", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_File.Append(self.m_Exit)
 
@@ -177,11 +187,21 @@ class MainFrame(wx.Frame):
 
         self.menuBar.Append(self.m_GoTo, "GoTo")
 
-        self.m_Add = wx.Menu()
-        self.m_add_before = wx.MenuItem(self.m_Add, wx.ID_ANY, u"Add before", wx.EmptyString,
+        self.m_Move = wx.Menu()
+        self.m_add_before = wx.MenuItem(self.m_Move, wx.ID_ANY, u"Add before", wx.EmptyString,
                                   wx.ITEM_NORMAL)
-        self.m_Add.Append(self.m_add_before)
-        self.menuBar.Append(self.m_Add, "Add")
+        self.m_Move.Append(self.m_add_before)
+
+        self.m_Move.AppendSeparator()
+
+        self.m_move_Up = wx.MenuItem(self.m_Move, wx.ID_ANY, u"Move Up", wx.EmptyString,
+                                        wx.ITEM_NORMAL)
+        self.m_Move.Append(self.m_move_Up)
+        self.m_move_Down = wx.MenuItem(self.m_Move, wx.ID_ANY, u"Move Down", wx.EmptyString,
+                                        wx.ITEM_NORMAL)
+        self.m_Move.Append(self.m_move_Down)
+
+        self.menuBar.Append(self.m_Move, "Move")
 
         self.m_About = wx.Menu()
         self.m_About_Description = wx.MenuItem(self.m_About, wx.ID_ANY, u"About program", wx.EmptyString, wx.ITEM_NORMAL)
@@ -216,6 +236,9 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_MENU, self.go_first, self.m_First)
         self.Bind(wx.EVT_MENU, self.go_last, self.m_Last)
+
+        self.Bind(wx.EVT_MENU, self.move_up, self.m_move_Up)
+        self.Bind(wx.EVT_MENU, self.move_down, self.m_move_Down)
 
         # Connect Enter Events
         self.m_Filter.Bind(wx.EVT_TEXT_ENTER, self.find_item)
@@ -286,6 +309,7 @@ class MainFrame(wx.Frame):
                             #                       wildcard=self.wildcard,
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
+            self.clear_controls()
             self.file = dlg.GetPath().encode('utf-8')
             with open(self.file.decode('utf-8'), "rb") as f:
                 txt = f.readlines()
@@ -364,10 +388,16 @@ class MainFrame(wx.Frame):
         if self.file == "":
             self.SaveAs()
             return
-        with open(self.file, "w") as f:
+        else:
+            f = open(self.file.decode('utf-8'), "wb")
             for k, v in self.d.items():
                 s = k + '\t' + v[0] + '\t' + v[1] + '\n'
-                f.write(s.encode('utf-8'))
+                s = s.encode('utf-8')
+                f.write(s)
+        #with open(self.file, "wb") as f:
+        #    for k, v in self.d.items():
+        #        s = k + '\t' + v[0] + '\t' + v[1] + '\n'
+         #       f.write(s.encode('utf-8'))
 
     def SaveAs(self, e=0):
         """
@@ -382,13 +412,18 @@ class MainFrame(wx.Frame):
         dlg = wx.FileDialog(self, "Save As",
                                 style=style)
         if dlg.ShowModal() == wx.ID_OK:
-            self.file = dlg.GetPath()
+            d_p = dlg.GetPath()
+            d_p = d_p#.encode('utf-8')
+            self.file = d_p
             # Raname Title of window
-            self.SetTitle("Chainer - {0}".format(self.file))
-        with open(self.file, "w") as f:
+            self.SetTitle("Chainer - {0}".format(self.file.encode('utf-8')))
+            f = open(self.file, "wb")
             for k, v in self.d.items():
-                s = k + '\t' + v[0] + '\t' + v[1] + '\n'
-                f.write(s.encode('utf-8'))
+                v1 = v[0].encode('utf-8')
+                v2 = v[1].encode('utf-8')
+                s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
+                f.write(s)
+            f.close()
         dlg.Destroy()
         self.print_data()
 
@@ -708,15 +743,19 @@ class MainFrame(wx.Frame):
     def find_item(self, e=0):
         self.add_item()
         l_name = self.m_Filter.Value
+        l_name = l_name.encode('utf-8')
         for k, v in self.d.items():
             ### TODO: problem with coding
             try:
-                v1 = v[0].decode('utf-8')
-                v2 = v[1].decode('utf-8')
+                v1 = v[0].encode('utf-8')
+                v2 = v[1].encode('utf-8')
+                #v1 = v[0].decode('utf-8')
+                #v2 = v[1].decode('utf-8')
                 if v1.find(l_name) > -1 or v2.find(l_name) > -1:
-                        self.set_value(k.rpartition(':')[0], k.rpartition(':')[-1])
+                        self.clear_controls()
                         self.n_parent = k.rpartition(':')[0]
                         self.n = int(k.rpartition(':')[-1])
+                        self.set_value(self.n_parent, self.n)
             except:
                 pass
         return
@@ -955,7 +994,11 @@ class MainFrame(wx.Frame):
 
 
     def delete_branch(self, e=0):
-
+        """
+        Delete branch
+        :param e:
+        :return:
+        """
 
         # delete items
 
@@ -964,4 +1007,312 @@ class MainFrame(wx.Frame):
         self.set_value(self.n_parent, self.n)
 
 
+    def move_up(self, e=0):
+        """
+        Move item up
+        :param e:
+        :return: None
+        """
+        # previous element
+        mask = str(self.n_parent) + ":" + str(self.n-1)
+        if self.d.get(mask):
+            self.clear_controls()
+            v1 = self.d.get(mask)
+            k1 = mask
+            self.add_item()
+            mask2 = str(self.n_parent) + ":" + str(self.n)
+            v2 = self.d.get(mask2)
+            k2 = mask2
 
+            # change data
+            self.d[k1] = v2
+            self.d[k2] = v1
+
+            self.n = self.n - 1
+            # set new data
+            self.set_value(self.n_parent, self.n)
+
+
+
+    def move_down(self, e=0):
+        """"
+        Move item down
+        """
+        mask = str(self.n_parent) + ":" + str(self.n + 1)
+        if self.d.get(mask):
+            self.clear_controls()
+            v1 = self.d.get(mask)
+            k1 = mask
+            self.add_item()
+            mask2 = str(self.n_parent) + ":" + str(self.n)
+            v2 = self.d.get(mask2)
+            k2 = mask2
+
+            # change data
+            self.d[k1] = v2
+            self.d[k2] = v1
+
+            # renum childs
+            ### TODO: rewrite function
+            #self.renum_for_current_branch_plus()
+
+            self.n = self.n + 1
+            # set new data
+            self.set_value(self.n_parent, self.n)
+
+        else:
+            self.next_item()
+
+
+    def renum_branches_plus(self, level, n_num):
+        """
+        Renumber branches
+        + 1 to number
+        :param level: number in order of key
+        :param num: from which number to do renumbering
+        :return: None
+        """
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and num >= int(n_num):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level - 1]) + 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+
+    def renum_branches_minus(self, level, n_num):
+        """
+        Renumber branches
+        + 1 to number
+        :param level: number in order of key
+        :param num: from which number to do renumbering
+        :return: None
+        """
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and num >= int(n_num):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level - 1]) - 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+
+    def renum_from_cur_branches_plus(self):
+        """
+        Renumber brances
+        + 1 to number
+        use current parameters of item
+        :return:
+        """
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and num >= int(self.n):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level - 1]) + 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+
+    def renum_for_current_branch_plus(self):
+        """
+        Renumber brances
+        + 1 to number
+        use current parameters of item
+        :return:
+        """
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        mask = str(self.n_parent) + ":" + str(self.n)
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and str(k).startswith(mask):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level - 1]) + 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+
+    def renum_from_cur_branches_minus(self):
+        """
+        Renumber brances
+        - 1 to number
+        use current parameters of item
+        :return:
+        """
+        # new dictionary
+        d_new = dict()
+        # to add above
+
+        # find level of current item
+        level = len(str(self.n_parent).split(":")) + 1
+        # find items that level with higher number
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and num >= int(self.n):
+                l_elem = str(k).split(":")
+                num = int(l_elem[level - 1]) - 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    s_first = s_first + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        s_last = s_last + l_elem[j]
+                except:
+                    pass
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_new[s_summon] = v
+
+                # delete item from self.d
+                self.d.pop(k)
+            else:
+                d_new = self.d[k]
+
+        # change dictionary
+        self.d = d_new
+
+    def import_treeline(self):
+        """
+        Import Treeline-file
+        :return:
+        """
+        pass
+
+    def export_treeline(self):
+        """
+        Export treeline-file
+        :return:
+        """
+        pass

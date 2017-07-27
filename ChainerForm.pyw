@@ -975,12 +975,19 @@ class MainFrame(wx.Frame):
                 # delete item from self.d
                 self.d.pop(k)
             else:
-                d_new = self.d[k]
+                d_new[k] = self.d[k]
 
         # change dictionary
         self.d = d_new
+
+        # renum childs
+        self.go_down()
+
         # write data from dictionary even that current element is empty
         self.add_item(True)
+
+
+
         self.set_value(self.n_parent, self.n)
 
     def go_last(self, e=0):
@@ -1076,7 +1083,6 @@ class MainFrame(wx.Frame):
             k2 = mask2
 
             # renum childs of current branch
-            ### TODO: to debug
             self.exchange_branches('Up')
 
             # change data
@@ -1176,7 +1182,7 @@ class MainFrame(wx.Frame):
                 :param num: from which number to do renumbering
                 :return: None
                 """
-        ### TODO: debug
+
         d_first = dict()          # up branch
         d_second = dict()         # down branch
 
@@ -1223,7 +1229,7 @@ class MainFrame(wx.Frame):
                     s = ''
                     for w in range(1, len(s_last)):
                         s = s + s_last[w]
-                s_last = s
+                    s_last = s
                 # summon
                 if s_last:
                     s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
@@ -1263,7 +1269,7 @@ class MainFrame(wx.Frame):
                     s = ''
                     for w in range(1, len(s_last)):
                         s = s + s_last[w]
-                s_last = s
+                    s_last = s
 
                 # summon
                 if s_last:
@@ -1281,6 +1287,70 @@ class MainFrame(wx.Frame):
         for kkk, vvv in d_second.items():
             self.d[kkk] = vvv
 
+    def go_down(self):
+        """
+                        Renumber branches
+                        + 1 to number
+                        :param level: number in order of key
+                        :param num: from which number to do renumbering
+                        :return: None
+                        """
+
+        d_first = dict()  # up branch
+        #d_second = dict()  # down branch
+
+        level = len(str(self.n_parent).split(":")) + 1
+        n_num = int(self.n)
+
+        n_next = int(self.n) + 1
+
+        mask_cur = str(self.n_parent) + ":" + str(n_num)
+        #mask_next = str(self.n_parent) + ":" + str(n_next)
+        # find elements above
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and str(k).startswith(mask_cur):
+                l_elem = str(k).split(":")
+
+                num = int(l_elem[level - 1]) + 1
+                #else:
+                #    num = int(l_elem[level - 1]) - 1
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    if i == 0:
+                        s_first = s_first + l_elem[i]
+                    else:
+                        s_first = s_first + ":" + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        if j == 0:
+                            s_last = s_last + l_elem[j]
+                        else:
+                            s_last = s_last + ":" + l_elem[j]
+                except:
+                    pass
+
+                if s_last.startswith(":"):
+                    s = ''
+                    for w in range(1, len(s_last)):
+                        s = s + s_last[w]
+                    s_last = s
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_first[s_summon] = v
+                self.d.pop(k)
+
+
+
+        for kk, vv in d_first.items():
+            self.d[kk] = vv
 
     def renum_branches_minus(self, level, n_num):
         """

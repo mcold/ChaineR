@@ -8,6 +8,7 @@
 ###########################################################################
 
 import wx
+from collections import defaultdict
 #import wx.xrc
 
 
@@ -34,7 +35,7 @@ class MainFrame(wx.Frame):
 
 
 
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"Chainer", pos=wx.DefaultPosition, size=wx.Size(591,275),
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(591,275),
                           style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
@@ -159,10 +160,10 @@ class MainFrame(wx.Frame):
 
         self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Append Branch", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_AppendBranch)
-        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Branch", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Item", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_DeleteBranch)
-        self.m_DeleteItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete", wx.EmptyString, wx.ITEM_NORMAL)
-        self.Tree.Append(self.m_DeleteItem)
+        #self.m_DeleteItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete", wx.EmptyString, wx.ITEM_NORMAL)
+        #elf.Tree.Append(self.m_DeleteItem)
         self.m_InsertItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Insert", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_InsertItem)
 
@@ -222,7 +223,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
         self.Bind(wx.EVT_MENU, self.insert_branch, self.m_AppendBranch)
         self.Bind(wx.EVT_MENU, self.insert_item, self.m_InsertItem)
-        self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
+        #self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
 
         #self.Bind(wx.EVT_MENU, self., self.m_DeleteItem)
 
@@ -305,8 +306,8 @@ class MainFrame(wx.Frame):
         :param e: 
         :return: 
         """
-        dlg = wx.FileDialog(self, "Open File",
-                            #                       wildcard=self.wildcard,
+        dlg = wx.FileDialog(self, "Open File", "", "",
+                                      "ChaineR files (*.cr)|*.cr",
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             self.clear_controls()
@@ -351,6 +352,45 @@ class MainFrame(wx.Frame):
                 self.OpenFile_First()
         except:
             pass
+
+    def LastFiles(self, e=0):
+        """
+        Take last opened files
+        :param e:
+        :return:
+        """
+        try:
+            with open(r'LastFiles.txt', "rb") as f:
+                l = f.readlines().strip().split('\n')
+                return l
+        except:
+            pass
+
+    def AddLastFile(self, e=0):
+        """
+        Add last file to open
+        :param e:
+        :return:
+        """
+        l_new = list()
+        try:
+            with open(r'LastFiles.txt', "rb") as f:
+                l = f.readlines().strip().split('\n')
+        except:
+            pass
+        l.reverse()
+        for i in range(3):
+            try:
+                l_new.append(l[i])
+            except:
+                pass
+        # add new line
+        l_new.append(self.file)
+        f = open(r'LastFiles.txt', "wb")
+        for j in range(len(l_new)):
+            s = l_new[j] + '\n'
+            f.write(s)
+
 
     def NewFile(self, e=0):
         """
@@ -409,8 +449,11 @@ class MainFrame(wx.Frame):
         self.add_item()
 
         style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
-        dlg = wx.FileDialog(self, "Save As",
-                                style=style)
+        #dlg = wx.FileDialog(self, "Save As",
+        #                        style=style)
+        dlg = wx.FileDialog(self, "Save As", "", "",
+                                      "ChaineR files (*.cr)|*.cr",
+                                      wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_OK:
             d_p = dlg.GetPath()
             d_p = d_p#.encode('utf-8')
@@ -539,7 +582,7 @@ class MainFrame(wx.Frame):
 
 
     def add_item(self, b_empty=False):
-        if self.second_main_text.Value or b_empty:
+        if self.second_main_text.Value or self.second_mnemo_text.Value or b_empty:
             item = self.second_main_text.Value
             mnemo = self.second_mnemo_text.Value
             l = [item, mnemo]
@@ -568,6 +611,7 @@ class MainFrame(wx.Frame):
             pass
         # find previous
         mask = str(self.n_parent) + ":" + str(self.n - 1)
+
         if self.d.get(mask):
             self.first_main.SetLabelText(self.d[mask][0])
             self.first_mnemo.SetLabelText(self.d[mask][1])
@@ -761,8 +805,14 @@ class MainFrame(wx.Frame):
         return
 
     def insert_branch(self, e=0):
-        dlg = wx.FileDialog(self, "Open File",
-                            #                       wildcard=self.wildcard,
+        #dlg = wx.FileDialog(self, "Open File",
+        #                    #                       wildcard=self.wildcard,
+        #                    style=wx.FD_OPEN)
+        #dlg = wx.FileDialog(self, "Save As", "", "",
+        #                    "ChaineR files (*.cr)|*.cr",
+        #                    wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        dlg = wx.FileDialog(self, "Open File", "", "",
+                            "ChaineR files (*.cr)|*.cr",
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
             file = dlg.GetPath()
@@ -788,17 +838,35 @@ class MainFrame(wx.Frame):
         return
 
     def delete_branch(self, e=0):
-        d = dict()
+        """
+        Delete branch of items
+        :param e:
+        :return:
+        """
+        # delete childs
+        mask = str(self.n_parent) + ":" + str(self.n)
         for k, v in self.d.items():
-            if k.startswith(self.n):
-                self.d.popitem()
-        # TODO: delete current item
+            if str(k).startswith(mask):
+                self.d.pop(k)
+
+        # renum numbers above
+        ### TODO: to test
+        level = len(str(self.n_parent).split(":")) + 1
+        self.renum_branches_minus(level, self.n)
+
+        # delete current item
+        self.n = self.n + 1
+        mask_next = str(self.n_parent) + ":" + str(self.n)
+        if self.d.get(mask_next):
+            self.set_value(self.n_parent, self.n)
+        else:
+            self.next_item()
+
+
 
     def insert_item(self, e=0):
         pass
 
-    def delete_item(self, e=0):
-        pass
 
     def set_arrows(self):
         """
@@ -991,30 +1059,13 @@ class MainFrame(wx.Frame):
         # write data from dictionary even that current element is empty
         self.set_value()
 
-
-
-    def delete_branch(self, e=0):
-        """
-        Delete branch
-        :param e:
-        :return:
-        """
-
-        # delete items
-
-
-        # set
-        self.set_value(self.n_parent, self.n)
-
-
     def move_up(self, e=0):
         """
         Move item up
         :param e:
         :return: None
         """
-        # previous element
-        mask = str(self.n_parent) + ":" + str(self.n-1)
+        mask = str(self.n_parent) + ":" + str(self.n - 1)
         if self.d.get(mask):
             self.clear_controls()
             v1 = self.d.get(mask)
@@ -1023,6 +1074,10 @@ class MainFrame(wx.Frame):
             mask2 = str(self.n_parent) + ":" + str(self.n)
             v2 = self.d.get(mask2)
             k2 = mask2
+
+            # renum childs of current branch
+            ### TODO: to debug
+            self.exchange_branches('Up')
 
             # change data
             self.d[k1] = v2
@@ -1048,13 +1103,15 @@ class MainFrame(wx.Frame):
             v2 = self.d.get(mask2)
             k2 = mask2
 
+
+
+            # renum childs of current branch
+            ### TODO: to debug
+            self.exchange_branches('Down')
+
             # change data
             self.d[k1] = v2
             self.d[k2] = v1
-
-            # renum childs
-            ### TODO: rewrite function
-            #self.renum_for_current_branch_plus()
 
             self.n = self.n + 1
             # set new data
@@ -1111,6 +1168,120 @@ class MainFrame(wx.Frame):
         # change dictionary
         self.d = d_new
 
+    def exchange_branches(self, straight='Down'):
+        """
+                Renumber branches
+                + 1 to number
+                :param level: number in order of key
+                :param num: from which number to do renumbering
+                :return: None
+                """
+        ### TODO: debug
+        d_first = dict()          # up branch
+        d_second = dict()         # down branch
+
+        level = len(str(self.n_parent).split(":")) + 1
+        n_num = int(self.n)
+        if straight == 'Down':
+            n_next = int(self.n) + 1
+        else:
+            if straight == 'Up':
+                n_next = int(self.n) - 1
+            else:
+                print('Entered not right straingth!!!')
+                return
+
+        mask_cur = str(self.n_parent) + ":" + str(n_num)
+        mask_next = str(self.n_parent) + ":" + str(n_next)
+        # find elements above
+        for k, v in self.d.items():
+            num = int(str(k).split(":")[-1])
+            if len(str(k).split(":")) >= level and str(k).startswith(mask_cur):
+                l_elem = str(k).split(":")
+                if straight == 'Down':
+                    num = int(l_elem[level - 1]) + 1
+                else:
+                    num = int(l_elem[level - 1]) - 1
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    if i == 0:
+                        s_first = s_first + l_elem[i]
+                    else:
+                        s_first = s_first + ":" + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        if j == 0:
+                            s_last = s_last + l_elem[j]
+                        else:
+                            s_last = s_last + ":" + l_elem[j]
+                except:
+                    pass
+
+                if s_last.startswith(":"):
+                    s = ''
+                    for w in range(1, len(s_last)):
+                        s = s + s_last[w]
+                s_last = s
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_first[s_summon] = v
+                self.d.pop(k)
+
+            if len(str(k).split(":")) >= level and str(k).startswith(mask_next):
+                l_elem = str(k).split(":")
+                if straight == 'Down':
+                    num = int(l_elem[level - 1]) - 1
+                else:
+                    num = int(l_elem[level - 1]) + 1
+
+                # summon key
+                s_first = ""  # first part of string
+                s_last = ""  # last part of string
+                for i in range(0, level - 1):
+                    if i == 0:
+                        s_first = s_first + l_elem[i]
+                    else:
+                        s_first = s_first + ":" + l_elem[i]
+                try:
+                    for j in range(level, len(l_elem)):
+                        if j == 0:
+                            s_last = s_last + l_elem[j]
+                        else:
+                            s_last = s_last + ":" + l_elem[j]
+
+                except:
+                    pass
+
+                if s_last.startswith(":"):
+                    s = ''
+                    for w in range(1, len(s_last)):
+                        s = s + s_last[w]
+                s_last = s
+
+                # summon
+                if s_last:
+                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                else:
+                    s_summon = str(s_first) + ":" + str(num)
+
+                # write to dictionary
+                d_second[s_summon] = v
+                self.d.pop(k)
+
+        for kk, vv in d_first.items():
+            self.d[kk] = vv
+
+        for kkk, vvv in d_second.items():
+            self.d[kkk] = vvv
+
+
     def renum_branches_minus(self, level, n_num):
         """
         Renumber branches
@@ -1120,19 +1291,22 @@ class MainFrame(wx.Frame):
         :return: None
         """
         # new dictionary
-        d_new = dict()
+        d_new = {}
         # to add above
 
-        # find items that level with higher number
+        mask = str(self.n_parent) + ":" + str(self.n)
+        # find level of current item
+
         for k, v in self.d.items():
-            num = int(str(k).split(":")[-1])
-            if len(str(k).split(":")) >= level and num >= int(n_num):
+            num = int(str(k).split(":")[level-1])
+            if len(str(k).split(":")) >= level and num > n_num:
                 l_elem = str(k).split(":")
                 num = int(l_elem[level - 1]) - 1
 
                 # summon key
                 s_first = ""  # first part of string
                 s_last = ""  # last part of string
+
                 for i in range(0, level - 1):
                     s_first = s_first + l_elem[i]
                 try:
@@ -1147,13 +1321,12 @@ class MainFrame(wx.Frame):
                 else:
                     s_summon = str(s_first) + ":" + str(num)
 
-                # write to dictionary
-                d_new[s_summon] = v
+                d_new[str(s_summon)] = v
 
                 # delete item from self.d
                 self.d.pop(k)
             else:
-                d_new = self.d[k]
+                d_new[k] = self.d[k]
 
         # change dictionary
         self.d = d_new
@@ -1208,21 +1381,23 @@ class MainFrame(wx.Frame):
 
     def renum_for_current_branch_plus(self):
         """
-        Renumber brances
+        Renumber items of branch
         + 1 to number
         use current parameters of item
         :return:
         """
         # new dictionary
-        d_new = dict()
+        d_new = {}
         # to add above
 
         mask = str(self.n_parent) + ":" + str(self.n)
         # find level of current item
         level = len(str(self.n_parent).split(":")) + 1
         # find items that level with higher number
+
+        d_parse = dict()
         for k, v in self.d.items():
-            num = int(str(k).split(":")[-1])
+            #num = int(str(k).split(":")[-1])
             if len(str(k).split(":")) >= level and str(k).startswith(mask):
                 l_elem = str(k).split(":")
                 num = int(l_elem[level - 1]) + 1
@@ -1230,6 +1405,8 @@ class MainFrame(wx.Frame):
                 # summon key
                 s_first = ""  # first part of string
                 s_last = ""  # last part of string
+
+
                 for i in range(0, level - 1):
                     s_first = s_first + l_elem[i]
                 try:
@@ -1244,16 +1421,18 @@ class MainFrame(wx.Frame):
                 else:
                     s_summon = str(s_first) + ":" + str(num)
 
-                # write to dictionary
-                d_new[s_summon] = v
+                d_new[str(s_summon)] = v
 
                 # delete item from self.d
                 self.d.pop(k)
             else:
-                d_new = self.d[k]
+                d_new[k] = self.d[k]
 
         # change dictionary
         self.d = d_new
+        print(self.d)
+
+
 
     def renum_from_cur_branches_minus(self):
         """

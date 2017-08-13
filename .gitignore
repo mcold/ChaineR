@@ -4,3 +4,5 @@ dist
 *fbp
 test*
 .idea
+*.trl
+*.xml

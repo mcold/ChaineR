@@ -6,6 +6,7 @@
 ###########################################################################
 
 import wx
+import trl
 from collections import defaultdict
 #import wx.xrc
 
@@ -34,7 +35,7 @@ class MainFrame(wx.Frame):
 
 
         wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(591,275),
-                          style=wx.DEFAULT_FRAME_STYLE | wx.TAB_TRAVERSAL)
+                          style= wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
@@ -230,6 +231,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.SaveAs, self.m_SaveAs)
         self.Bind(wx.EVT_MENU, self.OpenFile, self.m_Open)
 
+        self.Bind(wx.EVT_MENU, self.import_trl, self.m_Import_Trl)
+
         self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
         self.Bind(wx.EVT_MENU, self.insert_branch, self.m_AppendBranch)
         self.Bind(wx.EVT_MENU, self.insert_item, self.m_InsertItem)
@@ -257,7 +260,13 @@ class MainFrame(wx.Frame):
         self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
         self.second_mnemo_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
 
-        self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.set_value)
+        #self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.mnemo_condition)
+        #self.m_Mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_condition)
+        self.first_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_first)
+        self.second_mnemo_text.Bind(wx.EVT_SET_FOCUS, self.mnemo_second)
+        self.third_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_third)
+        self.m_Mnemo.Bind(wx.EVT_CHECKBOX, self.mnemo_hide)
+        #self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
 
         #s = u"Test"
         #self.first_main.SetLabelText(s)
@@ -422,6 +431,13 @@ class MainFrame(wx.Frame):
         #    self.file = dlg.GetPath()
         #dlg.Destroy()
 
+        self.m_Mnemo.Value = True
+        self.m_Mnemo.SetValue(False)
+        self.m_Mnemo
+        self.first_mnemo.Show()
+        self.second_mnemo_text.Show()
+        self.third_mnemo.Show()
+
         # clear all
         self.clear_controls()
         self.d = dict()
@@ -429,6 +445,7 @@ class MainFrame(wx.Frame):
         self.file = ""
         self.SetTitle("Chainer")
         self.n = 1
+        self.mnemo_hide()
 
     def Save(self, e=0):
         """
@@ -491,17 +508,54 @@ class MainFrame(wx.Frame):
             handle.write(self.txt.Value)
             self.file = fileName
 
-    def print_data(self):
+    def import_trl(self, e=0):
+        """
+        Import trl
+        :return: 
+        """
+        dlg = wx.FileDialog(self, "Open File", "", "",
+                            "TreeLine files (*.trl)|*.trl",
+                            style=wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.clear_controls()
+            self.file = dlg.GetPath().encode('utf-8')
+            #self.d = trl.take_trl(self.file)
+            #with open(self.file.decode('utf-8'), "rb") as f:
+
+        else:
+            dlg.Destroy()
+            return
+
+        dlg.Destroy()
+
+        # if current item not null
+        mask = str(self.n_parent) + ":" + str(self.n)
+        if not self.d.get(mask):
+            d_trl = trl.take_trl(self.file, self.n_parent)
+        else:
+            d_trl = trl.take_trl(self.file, str(self.n_parent) + ":" + str(self.n))
+        for k, v in d_trl.items():
+            item = [v, '']
+            self.d[k] = item
+        self.clear_controls()
+        self.set_value(self.n_parent, self.n)
+        return
+
+
+    def print_data(self, e=0):
         """
         Print data of items
         :return: 
         """
+        #self.third_mnemo.Hide()
+        #print(self.d)
         #print "n: " + str(self.n)
         #print "data dict: " + str(self.d)
         #print "file: " + self.file
         #print "content: " + self.txt
         #print(self.n)
         # print "n: " + str(self.n) + " parent: " + str(self.d[self.n][0]) + " previous: " + str(self.d[self.n][1]) + " mext: " + str(self.d[self.n][2]) + " item: " + str(self.d[self.n][3]) + " mnemo: " + str(self.d[self.n][4])
+        pass
 
     def next_item(self, e=0):
         """
@@ -519,7 +573,8 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n + 1
             self.set_value(self.n_parent, self.n)
-            self.rightBtn.Enable()
+            self.upBtn.Enable()
+            self.upBtn.Show()
         else:
             try:
                 self.n = self.find_next()
@@ -544,7 +599,8 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n
             self.set_value(self.n_parent, self.n)
-            self.leftBtn.Enable()
+            self.down_Btn.Enable()
+            self.down_Btn.Show()
         #else:
         #    self.n = self.find_prev()
         #else:
@@ -571,6 +627,7 @@ class MainFrame(wx.Frame):
         mask = str(self.n_parent) + ":" + str(self.n)
         if self.d.get(mask):
             self.set_value(self.n_parent, self.n)
+            self.leftBtn.Show()
         self.set_arrows()
         return
         # take child as first
@@ -643,6 +700,7 @@ class MainFrame(wx.Frame):
             self.down_Btn.Enable()
         # set arrows
         self.set_arrows()
+        #self.mnemo_condition()
         #self.cond_mnemo()
 
     def set_value_without_mnemo(self, parent, n_item):
@@ -1042,6 +1100,10 @@ class MainFrame(wx.Frame):
             self.upBtn.SetLabelText("^")
         else:
             self.upBtn.SetLabelText("")
+            if self.m_Mnemo.Value == True:
+                self.upBtn.Hide()
+            else:
+                self.upBtn.Show()
 
         # down
         mask = str(self.n_parent) + ":" + str(self.n + 1)
@@ -1051,9 +1113,15 @@ class MainFrame(wx.Frame):
             if not self.m_Mnemo.Value:
                 self.down_Btn.SetLabelText("")
                 self.down_Btn.Enable()
+                self.down_Btn.Show()
             else:
                 self.down_Btn.SetLabelText("")
-                self.down_Btn.Disable()
+                #self.down_Btn.Disable()
+                #self.down_Btn.Hide()
+                if self.m_Mnemo.Value == True:
+                    self.down_Btn.Hide()
+                else:
+                    self.down_Btn.Show()
 
         # left
         mask = str(self.n_parent)
@@ -1073,9 +1141,9 @@ class MainFrame(wx.Frame):
             if not self.m_Mnemo.Value:
                 self.rightBtn.SetLabelText("")
                 self.rightBtn.Enable()
+                self.rightBtn.Show()
             else:
                 self.rightBtn.SetLabelText("")
-                self.rightBtn.Disable()
 
 
     def cond_mnemo(self, e=0):
@@ -1557,7 +1625,6 @@ class MainFrame(wx.Frame):
         # find level of current item
 
         for k, v in self.d.items():
-            ### TODO: debug
             num = int(str(k).split(":")[level-1])
             if len(str(k).split(":")) >= level and num > n_num:
                 l_elem = str(k).split(":")
@@ -1742,16 +1809,48 @@ class MainFrame(wx.Frame):
         # change dictionary
         self.d = d_new
 
-    def import_treeline(self):
-        """
-        Import Treeline-file
-        :return:
-        """
-        pass
+    def mnemo_hide(self, e=0):
+        if self.m_Mnemo.Value == True:
+            self.first_mnemo.Hide()
+            self.second_mnemo_text.Hide()
+            self.third_mnemo.Hide()
+        else:
+            self.first_mnemo.Show()
+            self.second_mnemo_text.Show()
+            self.third_mnemo.Show()
+            self.set_value(self.n_parent, self.n)
 
-    def export_treeline(self):
-        """
-        Export treeline-file
-        :return:
-        """
-        pass
+    def mnemo_condition(self, e=0):
+        if self.m_Mnemo.Value == True:
+            self.set_value(self.n_parent, self.n)
+        else:
+            self.first_mnemo.SetLabelText("")
+            self.second_mnemo_text.SetValue("")
+            self.third_mnemo.SetLabelText("")
+
+    def mnemo_first(self, e=0):
+        if self.m_Mnemo.Value == True:
+            mask = str(self.n_parent) + ":" + str(int(self.n) - 1)
+            if self.d.get(mask):
+                s2 = self.d[mask][1]
+                self.first_mnemo.SetLabelText(s2)
+        else:
+            self.first_mnemo.SetLabelText("")
+
+    def mnemo_second(self, e=0):
+        if self.m_Mnemo.Value == True:
+            mask = str(self.n_parent) + ":" + str(int(self.n))
+            if self.d.get(mask):
+                s2 = self.d[mask][1]
+                self.second_mnemo_text.SetValue(s2)
+        else:
+            self.second_mnemo_text.SetValue("")
+
+    def mnemo_third(self, e=0):
+        if self.m_Mnemo.Value == True:
+            mask = str(self.n_parent) + ":" + str(int(self.n) + 1)
+            if self.d.get(mask):
+                s2 = self.d[mask][1]
+                self.third_mnemo.SetLabelText(s2)
+        else:
+            self.third_mnemo.SetLabelText("")

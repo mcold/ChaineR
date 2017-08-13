@@ -20,7 +20,9 @@ class MainFrame(wx.Frame):
 
         self.file = ""
         self.txt = ""
-
+        self.b_ctrl_press = False
+        self.b_alt_press = False
+        self.b_shift_press = False
 
         # data
         #self.prev = 0
@@ -34,12 +36,12 @@ class MainFrame(wx.Frame):
 
 
 
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(591,275),
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(591,215),
                           style= wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
         self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION))
-        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION))
+        #self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION))
         wxSizer = wx.WrapSizer(wx.HORIZONTAL)
 
         filterSizer = wx.GridSizer(0, 2, 0, 0)
@@ -53,8 +55,8 @@ class MainFrame(wx.Frame):
         upSizer = wx.FlexGridSizer(0, 2, 0, 0)
         upSizer.Add(wx.Size(220, 0))
 
-        self.upBtn = wx.Button(self, wx.ID_ANY, u"^", wx.DefaultPosition, wx.Size(100, -1), 0)
-        upSizer.Add(self.upBtn, 0, wx.ALL, 5)
+        #self.upBtn = wx.Button(self, wx.ID_ANY, u"^", wx.DefaultPosition, wx.Size(100, -1), 0)
+        #upSizer.Add(self.upBtn, 0, wx.ALL, 5)
 
         wxSizer.Add(upSizer, 1, wx.EXPAND, 5)
 
@@ -113,8 +115,8 @@ class MainFrame(wx.Frame):
 
         downSizer.Add(wx.Size(220, 0))
 
-        self.down_Btn = wx.Button(self, wx.ID_ANY, u"v", wx.DefaultPosition, wx.Size(100, -1), 0)
-        downSizer.Add(self.down_Btn, 0, wx.ALL, 5)
+        #self.down_Btn = wx.Button(self, wx.ID_ANY, u"v", wx.DefaultPosition, wx.Size(100, -1), 0)
+        #downSizer.Add(self.down_Btn, 0, wx.ALL, 5)
 
         self.m_Mnemo = wx.CheckBox(self, wx.ID_ANY, u"Mnemo", wx.DefaultPosition, wx.DefaultSize, 0)
         downSizer.Add(self.m_Mnemo, 0, wx.ALL, 5)
@@ -125,28 +127,55 @@ class MainFrame(wx.Frame):
         self.Layout()
         self.menuBar = wx.MenuBar(0)
         self.m_File = wx.Menu()
-        self.m_New = wx.MenuItem(self.m_File, wx.ID_ANY, u"New", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_New = wx.MenuItem(self.m_File, wx.ID_ANY, u"New             ^+N", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_File.Append(self.m_New)
 
-        self.m_Open = wx.MenuItem(self.m_File, wx.ID_ANY, u"Open", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_Open = wx.MenuItem(self.m_File, wx.ID_ANY, u"Open           ^+O", wx.EmptyString, wx.ITEM_NORMAL)
 
         self.m_File.Append(self.m_Open)
 
-        self.m_Save = wx.MenuItem(self.m_File, wx.ID_ANY, u"Save", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_Save = wx.MenuItem(self.m_File, wx.ID_ANY, u"Save             ^+S", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_File.Append(self.m_Save)
 
-        self.m_SaveAs = wx.MenuItem(self.m_File, wx.ID_ANY, u"SaveAs", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_File.Append(self.m_SaveAs)
+        self.m_SaveAs = wx.MenuItem(self.m_File, wx.ID_ANY, u"SaveAs         ^+Sh+S", wx.EmptyString, wx.ITEM_NORMAL)
 
+        self.m_SaveSide = wx.Menu()
+
+
+        self.m_SaveLeft = wx.MenuItem(self.m_File, wx.ID_ANY, u"Left", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_SaveSide.Append(self.m_SaveLeft)
+
+        self.m_SaveRight = wx.MenuItem(self.m_File, wx.ID_ANY, u"Right", 'Test', wx.ITEM_NORMAL)
+        self.m_SaveSide.Append(self.m_SaveRight)
+
+        self.m_File.Append(wx.NewId(), 'SaveSide', self.m_SaveSide)
         self.m_File.AppendSeparator()
 
-        ### TODO: realize
+        ### TreeLine
+
         self.m_Import_Trl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Import Treeline", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_File.Append(self.m_Import_Trl)
+        #self.m_File.Append(self.m_Import_Trl)
 
         ### TODO: realize
         self.m_Export_Trl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Treeline", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_File.Append(self.m_Export_Trl)
+        #self.m_File.Append(self.m_Export_Trl)
+
+        self.m_Treeline = wx.Menu()
+        self.m_Treeline.Append(self.m_Import_Trl)
+        self.m_Treeline.Append(self.m_Export_Trl)
+        self.m_File.Append(wx.NewId(), 'Treeline', self.m_Treeline)
+
+        ### Tetra
+        ### TODO: realize
+        self.m_Import_Tetra = wx.MenuItem(self.m_File, wx.ID_ANY, u"Import Tetra", wx.EmptyString, wx.ITEM_NORMAL)
+
+        ### TODO: realize
+        self.m_Export_Tetra = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Tetra", wx.EmptyString, wx.ITEM_NORMAL)
+
+        self.m_Tetra = wx.Menu()
+        self.m_Tetra.Append(self.m_Import_Tetra)
+        self.m_Tetra.Append(self.m_Export_Tetra)
+        self.m_File.Append(wx.NewId(), 'Tetra', self.m_Tetra)
 
         self.m_File.AppendSeparator()
 
@@ -158,9 +187,9 @@ class MainFrame(wx.Frame):
 
         self.Tree = wx.Menu()
 
-        self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Append Branch", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Insert Branch    ^+I", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_AppendBranch)
-        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Item", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Item      ^+Delete", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_DeleteBranch)
         #self.m_DeleteItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete", wx.EmptyString, wx.ITEM_NORMAL)
         #elf.Tree.Append(self.m_DeleteItem)
@@ -233,10 +262,15 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.NewFile, self.m_New)
         self.Bind(wx.EVT_MENU, self.Save, self.m_Save)
         self.Bind(wx.EVT_MENU, self.SaveAs, self.m_SaveAs)
+        self.Bind(wx.EVT_MENU, self.SaveAs_left, self.m_SaveLeft)
+        self.Bind(wx.EVT_MENU, self.SaveAs_right, self.m_SaveRight)
         self.Bind(wx.EVT_MENU, self.OpenFile, self.m_Open)
 
         self.Bind(wx.EVT_MENU, self.import_trl, self.m_Import_Trl)
         self.Bind(wx.EVT_MENU, self.export_trl, self.m_Export_Trl)
+        self.Bind(wx.EVT_MENU, self.import_tetra, self.m_Import_Tetra)
+        self.Bind(wx.EVT_MENU, self.export_tetra, self.m_Export_Tetra)
+
         self.Bind(wx.EVT_MENU, self.show_configuration, self.m_Configuration)
 
         self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
@@ -248,8 +282,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.left_side_load, self.m_Left_Load)
         self.Bind(wx.EVT_MENU, self.right_side_load, self.m_Right_Load)
 
-        self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
-        self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
+        #self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
+        #self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
         self.Bind(wx.EVT_BUTTON, self.child_item, self.rightBtn)
         self.Bind(wx.EVT_BUTTON, self.parent_item, self.leftBtn)
 
@@ -278,6 +312,12 @@ class MainFrame(wx.Frame):
         self.m_Mnemo.Hide()     # hide while not work
         #self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
 
+        # HotKeys
+        self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+        self.second_mnemo_text.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+        self.m_Filter.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+
+
         #s = u"Test"
         #self.first_main.SetLabelText(s)
         #self.third_main.SetLabelText(s)
@@ -291,6 +331,7 @@ class MainFrame(wx.Frame):
 
         # set arrows
         self.set_arrows()
+        self.second_main_text.SetFocus()
 
 
     def __del__(self):
@@ -433,14 +474,7 @@ class MainFrame(wx.Frame):
         :return: 
         """
 
-        #dlg = wx.FileDialog(self, "Create File",
-     #                       wildcard=self.wildcard,
-         #                   style=wx.FD_SAVE)
-                            #style=wx.FD_OPEN)
-        #print(dlg)
-        #if dlg.ShowModal() == wx.ID_OK:
-        #    self.file = dlg.GetPath()
-        #dlg.Destroy()
+        self.m_Filter.SetValue('')
 
         self.m_Mnemo.Value = True
         self.m_Mnemo.SetValue(False)
@@ -514,6 +548,47 @@ class MainFrame(wx.Frame):
         dlg.Destroy()
         self.print_data()
 
+    def SaveAs_left(self, e=0):
+        self.SaveAs_side('left')
+
+    def SaveAs_right(self, e=0):
+        self.SaveAs_side('right')
+
+    def SaveAs_side(self, side):
+        """
+        Save data
+        :param e: nothing 
+        :return: 
+        """
+        # add item if it is
+        self.add_item()
+
+        style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
+        #dlg = wx.FileDialog(self, "Save As",
+        #                        style=style)
+        dlg = wx.FileDialog(self, "Save As", "", "",
+                                      "ChaineR files (*.cr)|*.cr",
+                                      wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            d_p = dlg.GetPath()
+            d_p = d_p#.encode('utf-8')
+            self.file = d_p
+            # Raname Title of window
+            self.SetTitle("Chainer - {0}".format(self.file.encode('utf-8')))
+            f = open(self.file, "wb")
+            for k, v in self.d.items():
+                v1 = v[0].encode('utf-8')
+                v2 = v[1].encode('utf-8')
+                if side == 'left':
+                    v2 = ''
+                if side == 'right':
+                    v1 = ''
+                s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
+                f.write(s)
+            f.close()
+        dlg.Destroy()
+        self.print_data()
+
     def WriteToDisk(self, fileName):
         with open(fileName, "wb") as handle:
             handle.write(self.txt.Value)
@@ -559,6 +634,24 @@ class MainFrame(wx.Frame):
         """
         self.show_debug()
 
+    ### TODO: realize
+    def import_tetra(self, e=0):
+        """
+        Import tetra
+        :param e: 
+        :return: 
+        """
+        self.show_debug()
+
+    ### TODO: realize
+    def export_tetra(self, e=0):
+        """
+        Export tetra
+        :param e: 
+        :return: 
+        """
+        self.show_debug()
+
     def print_data(self, e=0):
         """
         Print data of items
@@ -590,8 +683,8 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n + 1
             self.set_value(self.n_parent, self.n)
-            self.upBtn.Enable()
-            self.upBtn.Show()
+            #self.upBtn.Enable()
+            #self.upBtn.Show()
         else:
             try:
                 self.n = self.find_next()
@@ -616,8 +709,8 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.n = self.n
             self.set_value(self.n_parent, self.n)
-            self.down_Btn.Enable()
-            self.down_Btn.Show()
+            #self.down_Btn.Enable()
+            #self.down_Btn.Show()
         #else:
         #    self.n = self.find_prev()
         #else:
@@ -706,7 +799,7 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.first_main.SetLabelText(self.d[mask][0])
             self.first_mnemo.SetLabelText(self.d[mask][1])
-            self.upBtn.Enable()
+            #self.upBtn.Enable()
 
         # find next
         mask = str(self.n_parent) + ":" + str(int(n_item) + 1)
@@ -715,7 +808,7 @@ class MainFrame(wx.Frame):
             s2 = self.d[mask][1]
             self.third_main.SetLabelText(s1)
             self.third_mnemo.SetLabelText(s2)
-            self.down_Btn.Enable()
+            #self.down_Btn.Enable()
         # set arrows
         self.set_arrows()
         #self.mnemo_condition()
@@ -745,13 +838,13 @@ class MainFrame(wx.Frame):
         if self.d.get(mask):
             self.first_main.SetLabelText(self.d[mask][0])
             self.first_mnemo.SetLabelText(self.d[mask][1])
-            self.upBtn.Enable()
+            #self.upBtn.Enable()
         # find next
         mask = str(self.n_parent) + ":" + str(self.n + 1)
         if self.d.get(mask):
             self.third_main.SetLabelText(self.d[mask][0])
             self.third_mnemo.SetLabelText(self.d[mask][1])
-            self.down_Btn.Enable()
+            #self.down_Btn.Enable()
         # set arrows
         self.set_arrows()
 
@@ -897,6 +990,7 @@ class MainFrame(wx.Frame):
                         self.set_value(self.n_parent, self.n)
             except:
                 pass
+        self.second_main_text.SetFocus()
         return
 
     def insert_branch(self, e=0):
@@ -1119,32 +1213,32 @@ class MainFrame(wx.Frame):
         """
         # Up
         mask = str(self.n_parent) + ":" + str(self.n - 1)
-        if self.d.get(mask):
-            self.upBtn.SetLabelText("^")
-        else:
-            self.upBtn.SetLabelText("")
-            if self.m_Mnemo.Value == True:
-                self.upBtn.Hide()
-            else:
-                self.upBtn.Show()
+        #if self.d.get(mask):
+        #    self.upBtn.SetLabelText("^")
+        #else:
+        #    self.upBtn.SetLabelText("")
+        #    if self.m_Mnemo.Value == True:
+        #        self.upBtn.Hide()
+        #    else:
+        #        self.upBtn.Show()
 
         # down
         mask = str(self.n_parent) + ":" + str(self.n + 1)
-        if self.d.get(mask):
-            self.down_Btn.SetLabelText("v")
-        else:
-            if not self.m_Mnemo.Value:
-                self.down_Btn.SetLabelText("")
-                self.down_Btn.Enable()
-                self.down_Btn.Show()
-            else:
-                self.down_Btn.SetLabelText("")
-                #self.down_Btn.Disable()
-                #self.down_Btn.Hide()
-                if self.m_Mnemo.Value == True:
-                    self.down_Btn.Hide()
-                else:
-                    self.down_Btn.Show()
+        #if self.d.get(mask):
+            #self.down_Btn.SetLabelText("v")
+        #else:
+        #    if not self.m_Mnemo.Value:
+         #       self.down_Btn.SetLabelText("")
+         #       self.down_Btn.Enable()
+         #       self.down_Btn.Show()
+         #   else:
+         #       self.down_Btn.SetLabelText("")
+         #       #self.down_Btn.Disable()
+         #       #self.down_Btn.Hide()
+         #       if self.m_Mnemo.Value == True:
+         #           self.down_Btn.Hide()
+         #       else:
+         #           self.down_Btn.Show()
 
         # left
         mask = str(self.n_parent)
@@ -1930,6 +2024,80 @@ class MainFrame(wx.Frame):
         self.dlg.Show()
         return True
 
+    def onTextKeyEvent(self, event):
+        """
+        Execute if arrow-buttons pressed
+        :param event: 
+        :return: 
+        """
+        keycode = event.GetKeyCode()
+        print keycode
+        if keycode == wx.WXK_RIGHT:
+            self.child_item()
+        if keycode == wx.WXK_LEFT:
+            self.parent_item()
+        if keycode == wx.WXK_UP:
+            self.prev_item(0)
+        if keycode == wx.WXK_DOWN:
+            self.next_item()
+        event.Skip()
+
+        # Ctrl
+        if keycode == wx.WXK_CONTROL:
+            self.b_ctrl_press = True
+            event.Skip()
+            return
+
+        # Shift
+        if keycode == wx.WXK_SHIFT:
+            self.b_shift_press = True
+            event.Skip()
+            return
+
+        if keycode == 70 and self.b_ctrl_press:     # Ctrl + F
+            self.m_Filter.SetFocus()
+        if keycode == 78 and self.b_ctrl_press:     # Ctrl + N
+            self.NewFile()
+        if keycode == 79 and self.b_ctrl_press:     # Ctrl + O
+            self.OpenFile()
+        if keycode == 83 and self.b_ctrl_press and self.b_shift_press:     # Ctrl + Shift + S
+            self.SaveAs()
+            self.b_ctrl_press = False
+            self.b_alt_press = False
+            self.b_shift_press = False
+            return
+        if keycode == 83 and self.b_ctrl_press:     # Ctrl + S
+            self.Save()
+
+        if keycode == 127 and self.b_ctrl_press:     # Delete
+            self.delete_item()
+        if keycode == 73 and self.b_ctrl_press:     # Ctrl + I
+            self.insert_branch()
+
+        # alt
+        if keycode == wx.WXK_ALT:
+            self.b_alt_press = True
+            event.Skip()
+            return
+
+        if keycode == 85 and self.b_alt_press:     # Alt + U
+            self.move_up()
+        if keycode == 68 and self.b_alt_press:     # Alt + d
+            self.move_down()
+        if keycode == 70 and self.b_alt_press:     # Alt + f
+            self.go_first()
+        if keycode == 69 and self.b_alt_press:     # Alt + e
+            self.exchange_branches()
+        if keycode == 76 and self.b_alt_press:     # Alt + l
+            self.go_last()
+
+
+
+        self.b_ctrl_press = False
+        self.b_alt_press = False
+        self.b_shift_press = False
+        event.Skip()
+
 
 class AboutDialog(wx.Dialog):
     def __init__(self, parent):
@@ -1965,7 +2133,7 @@ class DebugDialog(wx.Dialog):
         bSizer1 = wx.BoxSizer(wx.VERTICAL)
 
         self.m_staticText5 = wx.StaticText(self, wx.ID_ANY,
-                                           u"Current element in process of realization\nComing soon\n\nAll information you can reseive at https://github.com/mcold/ChaineR",
+                                           u"Current element in process of realization\nComing soon\n\nAll information you can receive at https://github.com/mcold/ChaineR",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
         self.m_staticText5.Wrap(-1)
         bSizer1.Add(self.m_staticText5, 0, wx.ALL, 5)

@@ -6,3 +6,4 @@ test*
 .idea
 *.trl
 *.xml
+*.pyc

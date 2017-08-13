@@ -38,7 +38,8 @@ class MainFrame(wx.Frame):
                           style= wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
-
+        self.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION))
+        self.SetForegroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_INACTIVECAPTION))
         wxSizer = wx.WrapSizer(wx.HORIZONTAL)
 
         filterSizer = wx.GridSizer(0, 2, 0, 0)
@@ -144,8 +145,8 @@ class MainFrame(wx.Frame):
         self.m_File.Append(self.m_Import_Trl)
 
         ### TODO: realize
-        self.m_ExportTrl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Treeline", wx.EmptyString, wx.ITEM_NORMAL)
-        self.m_File.Append(self.m_ExportTrl)
+        self.m_Export_Trl = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Treeline", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_File.Append(self.m_Export_Trl)
 
         self.m_File.AppendSeparator()
 
@@ -223,6 +224,9 @@ class MainFrame(wx.Frame):
 
         self.Centre(wx.BOTH)
 
+        self.statusbar = self.CreateStatusBar(1)
+        self.statusbar.SetStatusText('')
+
         #Binding
 
         self.Bind(wx.EVT_MENU, self.CloseWin, self.m_Exit)
@@ -232,6 +236,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.OpenFile, self.m_Open)
 
         self.Bind(wx.EVT_MENU, self.import_trl, self.m_Import_Trl)
+        self.Bind(wx.EVT_MENU, self.export_trl, self.m_Export_Trl)
+        self.Bind(wx.EVT_MENU, self.show_configuration, self.m_Configuration)
 
         self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
         self.Bind(wx.EVT_MENU, self.insert_branch, self.m_AppendBranch)
@@ -255,6 +261,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.move_up, self.m_move_Up)
         self.Bind(wx.EVT_MENU, self.move_down, self.m_move_Down)
 
+        self.Bind(wx.EVT_MENU, self.show_about, self.m_About_Description)
+
         # Connect Enter Events
         self.m_Filter.Bind(wx.EVT_TEXT_ENTER, self.find_item)
         self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
@@ -266,6 +274,8 @@ class MainFrame(wx.Frame):
         self.second_mnemo_text.Bind(wx.EVT_SET_FOCUS, self.mnemo_second)
         self.third_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_third)
         self.m_Mnemo.Bind(wx.EVT_CHECKBOX, self.mnemo_hide)
+        ### TODO: debug
+        self.m_Mnemo.Hide()     # hide while not work
         #self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
 
         #s = u"Test"
@@ -361,6 +371,7 @@ class MainFrame(wx.Frame):
 
         # Raname Title of window
         self.SetTitle("Chainer - {0}".format(self.file))
+
 
     def LoadFile(self, e=0):
         """
@@ -541,6 +552,12 @@ class MainFrame(wx.Frame):
         self.set_value(self.n_parent, self.n)
         return
 
+    def export_trl(self, e=0):
+        """
+        Export trl
+        :return: 
+        """
+        self.show_debug()
 
     def print_data(self, e=0):
         """
@@ -629,6 +646,7 @@ class MainFrame(wx.Frame):
             self.set_value(self.n_parent, self.n)
             self.leftBtn.Show()
         self.set_arrows()
+        self.gen_StatusBar()
         return
         # take child as first
 
@@ -702,6 +720,9 @@ class MainFrame(wx.Frame):
         self.set_arrows()
         #self.mnemo_condition()
         #self.cond_mnemo()
+
+        # gemerate statisbar
+        self.gen_StatusBar()
 
     def set_value_without_mnemo(self, parent, n_item):
         """
@@ -1040,6 +1061,8 @@ class MainFrame(wx.Frame):
         :param e:
         :return:
         """
+        ### TODO: debug
+        #self.show_debug()
         # delete childs
         mask = str(self.n_parent) + ":" + str(self.n)
         for k, v in self.d.items():
@@ -1854,3 +1877,103 @@ class MainFrame(wx.Frame):
                 self.third_mnemo.SetLabelText(s2)
         else:
             self.third_mnemo.SetLabelText("")
+
+    def gen_StatusBar(self):
+        """
+        Generate statusbar text for current element
+        :return: 
+        """
+        self.statusbar.SetStatusText('')
+        # if root -> exit
+        if self.n_parent == '0':
+            return
+        level = len(self.n_parent.split(":")) - 1
+        par = self.n_parent
+        result = ''
+        l_res = list()
+        for i in range(level):
+            mask = par
+            item = self.d[mask][0]
+            l_res.append(item)
+            par = par.rpartition(":")[0]
+            if par == '0':
+                break
+        l_res.reverse()
+        result = " \\ ".join(l_res)
+        self.statusbar.SetStatusText(result)
+
+    def show_configuration(self, e=0):
+        """
+        Configuration window
+        :param e: 
+        :return: 
+        """
+        self.show_debug()
+
+    def show_about(self, e=0):
+        """
+        About dialog window
+        :param e: 
+        :return: 
+        """
+        self.dlg = AboutDialog(None)
+        self.dlg.Show()
+        return True
+
+    def show_debug(self, e=0):
+        """
+        Debug dialog window
+        :param e: 
+        :return: 
+        """
+        self.dlg = DebugDialog(None)
+        self.dlg.Show()
+        return True
+
+
+class AboutDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, id=wx.ID_ANY, title=u"About ChaineR", pos=wx.DefaultPosition,
+                           size=wx.Size(400, 125), style=wx.DEFAULT_DIALOG_STYLE)
+
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        bSizer1 = wx.BoxSizer(wx.VERTICAL)
+
+        self.m_staticText5 = wx.StaticText(self, wx.ID_ANY,
+                                           u"Program is written for work with mnemonic items in tree format\nParticularly can be used for construct Ciceron memory palace\n\nAll rights reserved\nEnjoy!",
+                                           wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText5.Wrap(-1)
+        bSizer1.Add(self.m_staticText5, 0, wx.ALL, 5)
+
+        self.SetSizer(bSizer1)
+        self.Layout()
+
+        self.Centre(wx.BOTH)
+
+    def __del__(self):
+        pass
+
+
+class DebugDialog(wx.Dialog):
+    def __init__(self, parent):
+        wx.Dialog.__init__(self, parent, id=wx.ID_ANY, title=u"Debug", pos=wx.DefaultPosition, size=wx.Size(400, 125),
+                           style=wx.DEFAULT_DIALOG_STYLE)
+
+        self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
+
+        bSizer1 = wx.BoxSizer(wx.VERTICAL)
+
+        self.m_staticText5 = wx.StaticText(self, wx.ID_ANY,
+                                           u"Current element in process of realization\nComing soon\n\nAll information you can reseive at https://github.com/mcold/ChaineR",
+                                           wx.DefaultPosition, wx.DefaultSize, 0)
+        self.m_staticText5.Wrap(-1)
+        bSizer1.Add(self.m_staticText5, 0, wx.ALL, 5)
+
+        self.SetSizer(bSizer1)
+        self.Layout()
+
+        self.Centre(wx.BOTH)
+
+    def __del__(self):
+        pass

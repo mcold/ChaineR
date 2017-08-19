@@ -1,9 +1,11 @@
 build
 dist
 .git
-*fbp
+*.fbp
+*pyc
+*.trl
+*.cr
+*.txt
+*.xml
 test*
 .idea
-*.trl
-*.xml
-*.pyc

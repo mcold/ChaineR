@@ -1,7 +1,5 @@
 #coding: utf-8
 
-file = "KnowledgeBase backup.trl"
-
 def take_trl(file, n_parent = '0'):
     """
     Function import treeline items
@@ -49,7 +47,7 @@ def take_trl(file, n_parent = '0'):
 
                 # if item empty and block closed -> go to higher level
                 if b_close(text[i]) and item == '':
-                    parent = parent.rpartition(':')[0]
+                    parent = str(parent).rpartition(':')[0]
                     num = find_next(parent, d)
                     continue
 
@@ -164,7 +162,7 @@ def find_next(parent, d):
     else:
         return 2
 
-def print_dir(d):
+def print_dict(d):
     """
     Print dictionary of data
     :param d: 
@@ -176,4 +174,4 @@ def print_dir(d):
 
 if __name__ == '__main__':
     d = take_trl(file)
-    print_dir(d)
+    print_dict(d)

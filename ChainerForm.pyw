@@ -3,6 +3,7 @@
 ###########################################################################
 ## Ideas
 ## TODO: Export items current level
+## TODO: restraint: not to export if none items
 ###########################################################################
 
 import wx
@@ -127,25 +128,27 @@ class MainFrame(wx.Frame):
         self.Layout()
         self.menuBar = wx.MenuBar(0)
         self.m_File = wx.Menu()
-        self.m_New = wx.MenuItem(self.m_File, wx.ID_ANY, u"New             ^+N", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_New = wx.MenuItem(self.m_File, wx.ID_ANY, u"New", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_File.Append(self.m_New)
 
-        self.m_Open = wx.MenuItem(self.m_File, wx.ID_ANY, u"Open           ^+O", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_Open = wx.MenuItem(self.m_File, wx.ID_ANY, u"Open", wx.EmptyString, wx.ITEM_NORMAL)
 
         self.m_File.Append(self.m_Open)
+        self.m_Save = wx.MenuItem(self.m_File, wx.ID_ANY, u"Save", wx.EmptyString,
+                                  wx.ITEM_NORMAL)  # done so (3 elements) specialy cause another side if write 's' execute 'SaveAs' function
 
-        self.m_Save = wx.MenuItem(self.m_File, wx.ID_ANY, u"Save             ^+S", wx.EmptyString, wx.ITEM_NORMAL)
+#        self.m_Save = wx.MenuItem(self.m_File, wx.ID_ANY, u"Save " + u"\t" + u"+S", wx.EmptyString, wx.ITEM_NORMAL) # done so (3 elements) specialy cause another side if write 's' execute 'SaveAs' function
         self.m_File.Append(self.m_Save)
 
-        self.m_SaveAs = wx.MenuItem(self.m_File, wx.ID_ANY, u"SaveAs         ^+Sh+S", wx.EmptyString, wx.ITEM_NORMAL)
-
+        self.m_SaveAs = wx.MenuItem(self.m_File, wx.ID_ANY, u"SaveAs", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_File.Append(self.m_SaveAs)
         self.m_SaveSide = wx.Menu()
 
 
         self.m_SaveLeft = wx.MenuItem(self.m_File, wx.ID_ANY, u"Left", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_SaveSide.Append(self.m_SaveLeft)
 
-        self.m_SaveRight = wx.MenuItem(self.m_File, wx.ID_ANY, u"Right", 'Test', wx.ITEM_NORMAL)
+        self.m_SaveRight = wx.MenuItem(self.m_File, wx.ID_ANY, u"Right", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_SaveSide.Append(self.m_SaveRight)
 
         self.m_File.Append(wx.NewId(), 'SaveSide', self.m_SaveSide)
@@ -177,9 +180,17 @@ class MainFrame(wx.Frame):
         self.m_Tetra.Append(self.m_Export_Tetra)
         self.m_File.Append(wx.NewId(), 'Tetra', self.m_Tetra)
 
+        ### Anki
+        self.m_Anki = wx.Menu()
+        ### TODO: add choice separator for anki-deck
+        self.m_Export_Anki = wx.MenuItem(self.m_File, wx.ID_ANY, u"Export Anki", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_Anki.Append(self.m_Export_Anki)
+        self.m_File.Append(wx.NewId(), 'Anki', self.m_Anki)
+
+
         self.m_File.AppendSeparator()
 
-        self.m_Exit = wx.MenuItem(self.m_File, wx.ID_ANY, u"Exit", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_Exit = wx.MenuItem(self.m_File, wx.ID_ANY, u"Exit \t Ctrl + ESC", wx.EmptyString, wx.ITEM_NORMAL)
         self.m_File.Append(self.m_Exit)
 
         self.menuBar.Append(self.m_File, u"File")
@@ -187,9 +198,9 @@ class MainFrame(wx.Frame):
 
         self.Tree = wx.Menu()
 
-        self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Insert Branch    ^+I", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_AppendBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Insert Branch " u"\t" + u"Ctrl+I", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_AppendBranch)
-        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Item      ^+Delete", wx.EmptyString, wx.ITEM_NORMAL)
+        self.m_DeleteBranch = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete Item \t Ctrl+Delete", wx.EmptyString, wx.ITEM_NORMAL)
         self.Tree.Append(self.m_DeleteBranch)
         #self.m_DeleteItem = wx.MenuItem(self.Tree, wx.ID_ANY, u"Delete", wx.EmptyString, wx.ITEM_NORMAL)
         #elf.Tree.Append(self.m_DeleteItem)
@@ -208,10 +219,10 @@ class MainFrame(wx.Frame):
         self.menuBar.Append(self.m_Options, "Options")
 
         self.m_GoTo = wx.Menu()
-        self.m_First = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"First", wx.EmptyString,
+        self.m_First = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"First \t PAGEUP", wx.EmptyString,
                                    wx.ITEM_NORMAL)
         self.m_GoTo.Append(self.m_First)
-        self.m_Last = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"Last", wx.EmptyString,
+        self.m_Last = wx.MenuItem(self.m_GoTo, wx.ID_ANY, u"Last \t PAGEDOWN", wx.EmptyString,
                                                wx.ITEM_NORMAL)
         self.m_GoTo.Append(self.m_Last)
 
@@ -233,7 +244,7 @@ class MainFrame(wx.Frame):
         self.menuBar.Append(self.m_Move, "Move")
 
         self.m_Exchange = wx.Menu()
-        self.m_Ex_Branch = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Exchange branches", wx.EmptyString,
+        self.m_Ex_Branch = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Exchange sides", wx.EmptyString,
                                        wx.ITEM_NORMAL)
         self.m_Exchange.Append(self.m_Ex_Branch)
         self.m_Move.AppendSeparator()
@@ -270,20 +281,21 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.export_trl, self.m_Export_Trl)
         self.Bind(wx.EVT_MENU, self.import_tetra, self.m_Import_Tetra)
         self.Bind(wx.EVT_MENU, self.export_tetra, self.m_Export_Tetra)
+        self.Bind(wx.EVT_MENU, self.export_anki, self.m_Export_Anki)
 
         self.Bind(wx.EVT_MENU, self.show_configuration, self.m_Configuration)
 
         self.Bind(wx.EVT_MENU, self.delete_branch, self.m_DeleteBranch)
         self.Bind(wx.EVT_MENU, self.insert_branch, self.m_AppendBranch)
         self.Bind(wx.EVT_MENU, self.insert_item, self.m_InsertItem)
-        #self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
+        # self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
 
         self.Bind(wx.EVT_MENU, self.exchange_mnemo_main, self.m_Ex_Branch)
         self.Bind(wx.EVT_MENU, self.left_side_load, self.m_Left_Load)
         self.Bind(wx.EVT_MENU, self.right_side_load, self.m_Right_Load)
 
-        #self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
-        #self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
+        # self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
+        # self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
         self.Bind(wx.EVT_BUTTON, self.child_item, self.rightBtn)
         self.Bind(wx.EVT_BUTTON, self.parent_item, self.leftBtn)
 
@@ -302,12 +314,13 @@ class MainFrame(wx.Frame):
         self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
         self.second_mnemo_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
 
-        #self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.mnemo_condition)
-        #self.m_Mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_condition)
+        # self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.mnemo_condition)
+        # self.m_Mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_condition)
         self.first_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_first)
         self.second_mnemo_text.Bind(wx.EVT_SET_FOCUS, self.mnemo_second)
         self.third_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_third)
         self.m_Mnemo.Bind(wx.EVT_CHECKBOX, self.mnemo_hide)
+
         ### TODO: debug
         self.m_Mnemo.Hide()     # hide while not work
         #self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
@@ -316,7 +329,15 @@ class MainFrame(wx.Frame):
         self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
         self.second_mnemo_text.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
         self.m_Filter.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+        self.leftBtn.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+        self.rightBtn.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
 
+        self.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
+        self.menuBar.Bind(wx.EVT_KEY_DOWN, self.gen_StatusBar)
+
+        #self.second_main_text.Bind(wx.EVT_COMMAND_SCROLL_BOTTOM, self.next_item)
+        #self.second_main_text.Bind(wx.EVT_COMMAND_SCROLL, self.next_item)
+        #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.onMainToMnemo)
 
         #s = u"Test"
         #self.first_main.SetLabelText(s)
@@ -546,7 +567,7 @@ class MainFrame(wx.Frame):
                 f.write(s)
             f.close()
         dlg.Destroy()
-        self.print_data()
+        #self.print_data()
 
     def SaveAs_left(self, e=0):
         self.SaveAs_side('left')
@@ -641,7 +662,13 @@ class MainFrame(wx.Frame):
         :param e: 
         :return: 
         """
-        self.show_debug()
+        dlg = wx.FileDialog(self, "Open File", "", "",
+                            "(*.xml)|*.xml",
+                            style=wx.FD_OPEN)
+        if dlg.ShowModal() == wx.ID_OK:
+            self.clear_controls()
+            self.file = dlg.GetPath().encode('utf-8')
+
 
     ### TODO: realize
     def export_tetra(self, e=0):
@@ -651,6 +678,57 @@ class MainFrame(wx.Frame):
         :return: 
         """
         self.show_debug()
+
+    def export_anki(self, e=0):
+        """
+        Export anki
+        """
+        sep = '`'
+
+        ### Show dialog - about separator
+        dlg = wx.FileDialog(self, "Save As", "", "",
+                            "Text files (*.txt)|*.txt",
+                            wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+
+        if dlg.ShowModal() == wx.ID_OK:
+            d_p = dlg.GetPath()
+
+           # d_p = d_p.encode('utf-8')
+            f = open(d_p, "wb")
+            for k, v in self.d.items():
+                # ask = font card
+                # ans = bach card
+                # mnemo = mnemonica
+                ask = v[0]
+                mnemo = v[1]
+                ans = self.take_anki_childs_line(k)
+                line = ask + sep + mnemo + sep + ans + '\n'
+                f.write(line.encode('utf-8'))
+            f.close()
+        dlg.Destroy()
+        # self.show_debug()
+
+    def take_anki_childs_line(self, parent_mask):
+        """"Take childs for anki items"""
+        l_items = list()
+        level = len(parent_mask.split(":")) + 1
+        for k, v in self.d.items():
+            if len(k.split(":")) == level and k.startswith(parent_mask):
+                value = str(v[0]) + '\t' + str(v[1])
+                l_items.append(value)
+
+        # form line of anki deck
+        if not len(l_items):
+            return ''
+        print(l_items)
+        line = l_items[0]
+        for i in range(1, len(l_items)):
+            div = r'<div>' + str(l_items[i]) + r"</div>"
+            line = line + div
+
+        return line
+
+
 
     def print_data(self, e=0):
         """
@@ -716,6 +794,12 @@ class MainFrame(wx.Frame):
         #else:
         #    self.clear_controls()
 
+    def go_root(self):
+        """Go to root"""
+        self.clear_controls()
+        self.n_parent = '0'
+        self.n = 1
+        self.set_value(parent=self.n_parent, n_item=self.n)
 
     def child_item(self, e=0):
         # restrain if null
@@ -942,7 +1026,7 @@ class MainFrame(wx.Frame):
         # TODO: dialog to write changes
         # test on empty
         self.add_item()
-        if not len(self.d) == 0:
+        if not self.file=='':
             self.Save()
         with open(r'Options.txt', "w") as f:
             f.write(self.file.encode('utf-8'))
@@ -1069,12 +1153,9 @@ class MainFrame(wx.Frame):
                             #"ChaineR files (*.cr)|*.cr",
                             style=wx.FD_OPEN)
         if dlg.ShowModal() == wx.ID_OK:
-            #file = dlg.GetPath().encode('utf-8')
             file = dlg.GetPath().encode('utf-8')
-            #take data from file
             l_side = list()
             with open(file.decode('utf-8'), "rb") as f:
-            #with open(file.decode('utf-8'), "rb") as f:
                 txt = f.readlines()
 
                 for i in range(len(txt)):
@@ -1082,7 +1163,6 @@ class MainFrame(wx.Frame):
                     tt = tt.decode('utf-8')
                     l_side.append(tt)
                     d_side[i+1] = tt
-                    #l_side.append(tt.encode('utf-8'))
         else:
             dlg.Destroy()
             return
@@ -1096,8 +1176,6 @@ class MainFrame(wx.Frame):
         d_data = dict()
         for k, v in self.d.items():
             if len(str(k).split(":")) == level and str(k).startswith(str(self.n_parent)):
-                #elem = str(k).split(":")[-1]
-                # summon another side data
                 if side == 'left':
                     l_data.append(v[1])
                     k_n = int(str(k).split(":")[-1])
@@ -1170,13 +1248,26 @@ class MainFrame(wx.Frame):
 
         # delete current item
         #self.n = self.n
-        mask_next = str(self.n_parent) + ":" + str(self.n)
-        if self.d.get(mask_next):
+        #mask_next = str(self.n_parent) + ":" + str(self.n)
+        #if self.d.get(mask_next):
+        #    self.set_value(self.n_parent, self.n)
+        #else:
+        #    self.next_item()
+        self.clear_controls()
+        mask = str(self.n_parent) + ":" + str(self.n)
+        print(mask)
+        if self.d.get(mask):
             self.set_value(self.n_parent, self.n)
         else:
-            self.next_item()
-
-
+            self.second_main_text.SetValue('')
+            self.second_mnemo_text.SetValue('')
+            # set previous
+            try:
+                mask = str(self.n_parent) + ":" + str(self.n - 1)
+                self.first_main.SetLabelText(self.d[mask][0])
+                self.first_mnemo.SetLabelText(self.d[mask][1])
+            except:
+                pass
 
     def insert_item(self, e=0):
         """
@@ -1189,6 +1280,9 @@ class MainFrame(wx.Frame):
         #for k, v in self.d.items():
         #    if str(k).startswith(mask):
         #        self.d.pop(k)
+        # if main null exit
+        if self.second_main_text.Value == '':
+            return
 
         # renum numbers below
         level = len(str(self.n_parent).split(":")) + 1
@@ -1198,7 +1292,9 @@ class MainFrame(wx.Frame):
         self.clear_controls()
         # add empty item
         self.add_item(True)
+
         self.set_value(self.n_parent, self.n)
+        self.second_main_text.SetFocus()
         #mask_next = str(self.n_parent) + ":" + str(self.n+1)
         #if self.d.get(mask_next):
         #    self.set_value(self.n_parent, self.n)
@@ -1389,6 +1485,7 @@ class MainFrame(wx.Frame):
         for k, v in self.d.items():
             if len(str(k).split(":")) >= level:
                 l_elem = str(k).split(":")
+                print(level)
                 num = int(l_elem[level]) + 1
 
                 # summon key
@@ -1406,7 +1503,7 @@ class MainFrame(wx.Frame):
                 s_summon = str(s_first) + str(num) + str(s_last)
 
                 # write to dictionary
-                d[s_summon] = v
+                self.d[s_summon] = v
 
                 # delete item from self.d
                 self.d.pop(k)
@@ -1492,12 +1589,12 @@ class MainFrame(wx.Frame):
         # find items that level with higher number
         mask = str(self.n_parent)
         for k, v in self.d.items():
-            if len(str(k).split(":"))> level -1:
+            if len(str(k).split(":"))> level - 1:
                 a = 1
             else:
                 a = 0
             if a == 1:
-                print(k)
+                #print(k)
                 num = int(str(k).split(":")[level-1])
                 if len(str(k).split(":")) >= level and num >= int(n_num) and str(k).startswith(mask):
                     l_elem = str(k).split(":")
@@ -1508,17 +1605,21 @@ class MainFrame(wx.Frame):
                     s_last = ""  # last part of string
                     for i in range(0, level - 1):
                         s_first = s_first + l_elem[i]
+                        if not i == (level - 1):
+                            s_first = s_first + ":"
                     try:
                         for j in range(level, len(l_elem)):
                             s_last = s_last + l_elem[j]
+                            if not j == len(l_elem):
+                                s_last = s_last + ":"
                     except:
                         pass
 
                     # summon
                     if s_last:
-                        s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+                        s_summon = str(s_first) + str(num) + str(s_last)
                     else:
-                        s_summon = str(s_first) + ":" + str(num)
+                        s_summon = str(s_first) + str(num)
 
                     # write to dictionary
                     d_new[s_summon] = v
@@ -1533,6 +1634,12 @@ class MainFrame(wx.Frame):
             d_new[k] = self.d[k]
         # change dictionary
         self.d = d_new
+        mask = str(self.n_parent) + ":" + str(self.n)
+        self.d[mask] = ''
+        for k,v in self.d.items():
+            print(str(k) + ' => ' + str(v))
+        mask = str(self.n_parent) + ":" + str(self.n+1)
+        #print(self.d[mask])
 
     def exchange_branches(self, straight='Down'):
         """
@@ -1742,36 +1849,47 @@ class MainFrame(wx.Frame):
         # find level of current item
 
         for k, v in self.d.items():
-            num = int(str(k).split(":")[level-1])
-            if len(str(k).split(":")) >= level and num > n_num:
-                l_elem = str(k).split(":")
-                num = int(l_elem[level - 1]) - 1
+            print(level)
+            try:
+                num = int(str(k).split(":")[level-1])
+                if len(str(k).split(":")) >= level and num > n_num:
+                    l_elem = str(k).split(":")
+                    num = int(l_elem[level - 1]) - 1
 
-                # summon key
-                s_first = ""  # first part of string
-                s_last = ""  # last part of string
+                    # summon key
+                    s_first = ""  # first part of string
+                    s_last = ""  # last part of string
 
-                for i in range(0, level - 1):
-                    s_first = s_first + l_elem[i]
-                try:
-                    for j in range(level, len(l_elem)):
-                        s_last = s_last + l_elem[j]
-                except:
-                    pass
+                    for i in range(0, level - 1):
+                        s_first = s_first + l_elem[i]
+                        if not i == (level - 1):
+                            s_first = s_first + ":"
+                    try:
+                        for j in range(level, len(l_elem)):
+                            s_last = s_last + l_elem[j]
+                            if not j == len(l_elem):
+                                s_last = s_last + ":"
+                    except:
+                        s_last = ""
 
-                # summon
-                if s_last:
-                    s_summon = str(s_first) + ":" + str(num) + ":" + str(s_last)
+
+                    # summon
+                    if s_last:
+                        s_summon = str(s_first) + str(num) + str(s_last)
+                    else:
+                        s_summon = str(s_first) + str(num)
+
+                        d_new[str(s_summon)] = v
+
+                        # delete item from self.d
+                        self.d.pop(k)
                 else:
-                    s_summon = str(s_first) + ":" + str(num)
-
-                d_new[str(s_summon)] = v
-
-                # delete item from self.d
-                self.d.pop(k)
-            else:
+                    d_new[k] = self.d[k]
+            except:
                 d_new[k] = self.d[k]
 
+        for k,v in d_new.items():
+            print(str(k) + ' => ' + str(v))
         # change dictionary
         self.d = d_new
 
@@ -1981,7 +2099,7 @@ class MainFrame(wx.Frame):
         # if root -> exit
         if self.n_parent == '0':
             return
-        level = len(self.n_parent.split(":")) - 1
+        level = len(str(self.n_parent).split(":")) - 1
         par = self.n_parent
         result = ''
         l_res = list()
@@ -1993,7 +2111,12 @@ class MainFrame(wx.Frame):
             if par == '0':
                 break
         l_res.reverse()
-        result = " \\ ".join(l_res)
+
+        # take just last 3 elements
+        if len(l_res) > 3:
+            result = l_res[-3] + " \\ " + l_res[-2] + " \\ " + l_res[-1]
+        else:
+            result = " \\ ".join(l_res)
         self.statusbar.SetStatusText(result)
 
     def show_configuration(self, e=0):
@@ -2024,23 +2147,81 @@ class MainFrame(wx.Frame):
         self.dlg.Show()
         return True
 
+    def left_save(self):
+        # take level
+        level = len(self.n_parent.split(":")) + 1
+
+        # take elements with this level
+        l_items = list()
+        for k,v in self.d.items():
+            item = v[0]
+            if len(item.split(":")) == level:
+                l_items.append(item)
+
+        # take name of file
+        dlg = wx.FileDialog(self, "Save As", "", "",
+                            "ChaineR files (*.cr)|*.cr",
+                            wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            pass
+
+    def right_save(self):
+        pass
+
+    def onMainToMnemo(self):
+        """Change focus from main to mnemo"""
+        self.second_mnemo_text.SetFocus()
+
+    def onMnemoToMain(self):
+        """Change focus from mnemo to main"""
+        self.second_mnemo_text.SetFocus()
+
     def onTextKeyEvent(self, event):
         """
-        Execute if arrow-buttons pressed
-        :param event: 
-        :return: 
+        HotKeys
         """
+
         keycode = event.GetKeyCode()
-        print keycode
+        print(keycode)
         if keycode == wx.WXK_RIGHT:
             self.child_item()
+
+        if keycode == wx.WXK_ESCAPE:
+            self.CloseWin()
+
+        ###
+        # first and last
+        if keycode == wx.WXK_PAGEDOWN:
+            self.go_last()
+
+        if keycode == wx.WXK_PAGEUP:
+            self.go_first()
+        ###
+
+
+        ###
+        # change focus
+        if keycode == wx.WXK_TAB and self.second_main_text.HasFocus():
+            self.onMainToMnemo()
+        if keycode == wx.WXK_TAB and self.second_mnemo_text.HasFocus():
+            self.onMnemoToMain()
+        ###
+
+        if keycode == wx.WXK_HOME:
+            ### TODO: realize function go to root
+            self.go_root()
+
+
+
         if keycode == wx.WXK_LEFT:
             self.parent_item()
+
         if keycode == wx.WXK_UP:
             self.prev_item(0)
+
         if keycode == wx.WXK_DOWN:
             self.next_item()
-        event.Skip()
+        #event.Skip()
 
         # Ctrl
         if keycode == wx.WXK_CONTROL:
@@ -2070,7 +2251,7 @@ class MainFrame(wx.Frame):
             self.Save()
 
         if keycode == 127 and self.b_ctrl_press:     # Delete
-            self.delete_item()
+            self.delete_branch()
         if keycode == 73 and self.b_ctrl_press:     # Ctrl + I
             self.insert_branch()
 
@@ -2091,13 +2272,32 @@ class MainFrame(wx.Frame):
         if keycode == 76 and self.b_alt_press:     # Alt + l
             self.go_last()
 
-
-
         self.b_ctrl_press = False
         self.b_alt_press = False
         self.b_shift_press = False
         event.Skip()
 
+        self.gen_StatusBar()
+
+    def sorting_dict(self):
+        """
+        Sorting dictionary in ascender order
+        """
+        ### take length of key and write in new dictionary repaired number without dots
+        d_rekey = dict()
+        # take level of number
+        level = len(max((self.d)))
+        l_res_key = list()
+        for k in self.d.items():
+            # renum key
+            res_key = "".join([x for x in k.split(':')])
+            delta = level - len(res_key)                         # number of zeros
+            res_key = int(res_key + str('0'*delta))
+            d_rekey[key] = res_key
+            l_res_key.append(res_key)                            # combine numbers
+        l_res_key.sort()                                         # sort numbers
+        ### TODO: write numbers to file
+        ### TODO: in argument - file and extension
 
 class AboutDialog(wx.Dialog):
     def __init__(self, parent):

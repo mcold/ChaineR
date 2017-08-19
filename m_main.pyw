@@ -11,6 +11,13 @@ class MyApp(wx.App):
         self.frame.Show()
         return True
 
+    def test(self):
+        self.frame.next_item(0, 'first', '11')
+        self.frame.next_item(0, 'second', '22')
+        self.frame.prev_item(0)
+        self.frame.prev_item(0)
+        self.frame.next_item(0)
+
 if __name__ == '__main__':
     app = MyApp(False)
     #app.test()

@@ -22,18 +22,26 @@ def take_tetra(file=f, n_parent = '0'):
         ### TODO: take just knowledge
         my_tag = 'knowledge'
         for i in range(len(text)):
-            line = text[i]
+            line = text[i].strip()
             d_line = dict()             # dictionary of tags for line
 
             # form dictionary
             ####
-            l = re.findall(r'\w+="\w+"', line)
+            l = [x[:-2] for x in re.findall(r'\w+="', line)]
+            tt = [x.rsplit('"')[-1] for x in line.split('" ')]
             try:
-                for j in range(len(l)):
-                    d_line[l[j].split('=')[0]] = l[j].split('=')[1][1:-1]
-            # if mistake -> wrong format
+                tt[-1] = line.split('"')[-2]                        # rewrite last item, cause fail in above method
             except:
-                continue
+                pass
+            for w in range(len(l)):
+                d_line[l[w]] = tt[w]
+            #l = re.findall(r'\w+=".*"', line)
+            #try:
+            #    for j in range(len(l)):
+            #        d_line[l[j].split('=')[0]] = l[j].split('=')[1][1:-1]
+            # if mistake -> wrong format
+            #except:
+            #    continue
                 # print(d_line)
                 ####
 
@@ -47,34 +55,37 @@ def take_tetra(file=f, n_parent = '0'):
             # if tag = node -> new child-level
             if tag == 'node':
                 # form mask
-                mask = str(parent) + ":" + num
+                mask = str(parent) + ":" + str(num)
                 d[mask] = d_line['name']
-
-                num += 1
+                parent = str(parent) + ":" + str(num)
+                num = 1
 
 
 
             # if tag = record
-            if tag == 'record':
+            if tag == 'record' and d_line['tags'].find(my_tag) >= 0:# and d_line['tags'] == 'knowledge':
                 # form mask
-                mask = str(parent) + ":" + num
+                mask = str(parent) + ":" + str(num)
                 d[mask] = d_line['name']
 
                 num += 1
 
             # if tag closing -> change parent & find next
-            if tag[0] == r'//':
-                new_par = parent.rpartition(":")[0]
-                parent = new_par
-                num = find_next(parent, d)
-
+            try:
+                if line.startswith(r'</node>') or (line.startswith(r'<node ') and line.endswith(r'/>')):
+                    new_par = parent.rpartition(":")[0]
+                    parent = new_par
+                    num = find_next(parent, d)
+            except:
+                pass
             # if recordtable
-            if tag == 'recordtable':
+            #if tag == 'recordtable':
+            #    num = 1
                 # form new level
-                parent = str(parent) + ":" + num
+            #    parent = str(parent) + ":" + str(num)
 
-                num = 1
-    print(d)
+            #    num = 1
+    return d
 
 def take_tag(line):
     """

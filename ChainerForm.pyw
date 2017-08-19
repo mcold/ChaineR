@@ -8,6 +8,7 @@
 
 import wx
 import trl
+import tetra
 from collections import defaultdict
 #import wx.xrc
 
@@ -497,12 +498,12 @@ class MainFrame(wx.Frame):
 
         self.m_Filter.SetValue('')
 
-        self.m_Mnemo.Value = True
-        self.m_Mnemo.SetValue(False)
-        self.m_Mnemo
-        self.first_mnemo.Show()
-        self.second_mnemo_text.Show()
-        self.third_mnemo.Show()
+        #self.m_Mnemo.Value = True
+        #self.m_Mnemo.SetValue(False)
+        #self.m_Mnemo
+        #self.first_mnemo.Show()
+        #self.second_mnemo_text.Show()
+        #self.third_mnemo.Show()
 
         # clear all
         self.clear_controls()
@@ -511,7 +512,7 @@ class MainFrame(wx.Frame):
         self.file = ""
         self.SetTitle("Chainer")
         self.n = 1
-        self.mnemo_hide()
+        #self.mnemo_hide()
 
     def Save(self, e=0):
         """
@@ -668,7 +669,24 @@ class MainFrame(wx.Frame):
         if dlg.ShowModal() == wx.ID_OK:
             self.clear_controls()
             self.file = dlg.GetPath().encode('utf-8')
+        else:
+            dlg.Destroy()
+            return
 
+        dlg.Destroy()
+
+        # if current item not null
+        mask = str(self.n_parent) + ":" + str(self.n)
+        if not self.d.get(mask):
+            d_tetra = tetra.take_tetra(self.file, self.n_parent)
+        else:
+            d_tetra = tetra.take_tetra(self.file, str(self.n_parent) + ":" + str(self.n))
+        for k, v in d_tetra.items():
+            item = [v, '']
+            self.d[k] = item
+        self.clear_controls()
+        self.set_value(self.n_parent, self.n)
+        return
 
     ### TODO: realize
     def export_tetra(self, e=0):
@@ -720,7 +738,6 @@ class MainFrame(wx.Frame):
         # form line of anki deck
         if not len(l_items):
             return ''
-        print(l_items)
         line = l_items[0]
         for i in range(1, len(l_items)):
             div = r'<div>' + str(l_items[i]) + r"</div>"
@@ -1255,7 +1272,6 @@ class MainFrame(wx.Frame):
         #    self.next_item()
         self.clear_controls()
         mask = str(self.n_parent) + ":" + str(self.n)
-        print(mask)
         if self.d.get(mask):
             self.set_value(self.n_parent, self.n)
         else:
@@ -1485,7 +1501,6 @@ class MainFrame(wx.Frame):
         for k, v in self.d.items():
             if len(str(k).split(":")) >= level:
                 l_elem = str(k).split(":")
-                print(level)
                 num = int(l_elem[level]) + 1
 
                 # summon key
@@ -1594,7 +1609,6 @@ class MainFrame(wx.Frame):
             else:
                 a = 0
             if a == 1:
-                #print(k)
                 num = int(str(k).split(":")[level-1])
                 if len(str(k).split(":")) >= level and num >= int(n_num) and str(k).startswith(mask):
                     l_elem = str(k).split(":")
@@ -1636,10 +1650,7 @@ class MainFrame(wx.Frame):
         self.d = d_new
         mask = str(self.n_parent) + ":" + str(self.n)
         self.d[mask] = ''
-        for k,v in self.d.items():
-            print(str(k) + ' => ' + str(v))
         mask = str(self.n_parent) + ":" + str(self.n+1)
-        #print(self.d[mask])
 
     def exchange_branches(self, straight='Down'):
         """
@@ -1849,7 +1860,6 @@ class MainFrame(wx.Frame):
         # find level of current item
 
         for k, v in self.d.items():
-            print(level)
             try:
                 num = int(str(k).split(":")[level-1])
                 if len(str(k).split(":")) >= level and num > n_num:
@@ -1888,8 +1898,6 @@ class MainFrame(wx.Frame):
             except:
                 d_new[k] = self.d[k]
 
-        for k,v in d_new.items():
-            print(str(k) + ' => ' + str(v))
         # change dictionary
         self.d = d_new
 
@@ -1992,9 +2000,6 @@ class MainFrame(wx.Frame):
 
         # change dictionary
         self.d = d_new
-        print(self.d)
-
-
 
     def renum_from_cur_branches_minus(self):
         """
@@ -2182,7 +2187,6 @@ class MainFrame(wx.Frame):
         """
 
         keycode = event.GetKeyCode()
-        print(keycode)
         if keycode == wx.WXK_RIGHT:
             self.child_item()
 

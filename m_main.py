@@ -11,6 +11,9 @@ class MyApp(wx.App):
         self.frame.Show()
         return True
 
+
+
+
 if __name__ == '__main__':
     app = MyApp(False)
     #app.test()

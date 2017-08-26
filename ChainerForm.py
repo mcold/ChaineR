@@ -4,7 +4,6 @@
 ## Ideas
 ## TODO: Export items current level
 ## TODO: restraint: not to export if none items
-
 ###########################################################################
 
 import wx
@@ -38,8 +37,10 @@ class MainFrame(wx.Frame):
         self.mnemo = "" # mnemo of item
 
 
+        # size elements
+        broad = 225
 
-        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(591,215),
+        wx.Frame.__init__(self, parent, id=wx.ID_ANY, title=u"ChaineR", pos=wx.DefaultPosition, size=wx.Size(broad*2 + 241,215),
                           style= wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX | wx.SYSTEM_MENU | wx.CAPTION | wx.CLOSE_BOX | wx.TAB_TRAVERSAL)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
@@ -53,6 +54,7 @@ class MainFrame(wx.Frame):
         filterSizer.Add(self.m_Filter, 0, wx.ALL, 5)
 
         wxSizer.Add(filterSizer, 1, wx.EXPAND, 5)
+
 
         # wxSizer.AddSpacer(0)
         upSizer = wx.FlexGridSizer(0, 2, 0, 0)
@@ -71,19 +73,19 @@ class MainFrame(wx.Frame):
 
         leftSizer.AddSpacer(0)
 
-        self.first_main = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), wx.TE_CENTRE)
+        self.first_main = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(broad, -1), wx.TE_CENTRE)
         self.first_main.Wrap(-1)
         leftSizer.Add(self.first_main, 0, wx.ALL, 5)
 
         self.leftBtn = wx.Button(self, wx.ID_ANY, u"<", wx.DefaultPosition, wx.DefaultSize, 0)
         leftSizer.Add(self.leftBtn, 0, wx.ALL, 5)
 
-        self.second_main_text = wx.TextCtrl(self, 1, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), wx.TE_CENTRE)
+        self.second_main_text = wx.TextCtrl(self, 1, wx.EmptyString, wx.DefaultPosition, wx.Size(broad, -1), wx.TE_CENTRE)
         leftSizer.Add(self.second_main_text, 0, wx.ALL, 5)
 
         leftSizer.AddSpacer(0)
 
-        self.third_main = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), wx.TE_CENTRE)
+        self.third_main = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(broad, -1), wx.TE_CENTRE)
         self.third_main.Wrap(-1)
         leftSizer.Add(self.third_main, 0, wx.ALL, 5)
 
@@ -93,19 +95,19 @@ class MainFrame(wx.Frame):
         rightSizer.SetFlexibleDirection(wx.BOTH)
         rightSizer.SetNonFlexibleGrowMode(wx.FLEX_GROWMODE_SPECIFIED)
 
-        self.first_mnemo = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), wx.TE_CENTRE)
+        self.first_mnemo = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.DefaultPosition, wx.Size(broad, -1), wx.TE_CENTRE)
         self.first_mnemo.Wrap(-1)
         rightSizer.Add(self.first_mnemo, 0, wx.ALL, 5)
 
         rightSizer.AddSpacer(1)
 
-        self.second_mnemo_text = wx.TextCtrl(self, 2, wx.EmptyString, wx.DefaultPosition, wx.Size(175, -1), wx.TE_CENTRE)
+        self.second_mnemo_text = wx.TextCtrl(self, 2, wx.EmptyString, wx.DefaultPosition, wx.Size(broad, -1), wx.TE_CENTRE)
         rightSizer.Add(self.second_mnemo_text, 0, wx.ALL, 5)
 
         self.rightBtn = wx.Button(self, wx.ID_ANY, u">", wx.DefaultPosition, wx.DefaultSize, 0)
         rightSizer.Add(self.rightBtn, 0, wx.ALL, 5)
 
-        self.third_mnemo = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.Point(10, 10), wx.Size(175, -1), wx.TE_CENTRE)
+        self.third_mnemo = wx.StaticText(self, wx.ID_ANY, wx.EmptyString, wx.Point(10, 10), wx.Size(broad, -1), wx.TE_CENTRE)
         self.third_mnemo.Wrap(-1)
         rightSizer.Add(self.third_mnemo, 0, wx.ALL, 5)
 
@@ -264,10 +266,20 @@ class MainFrame(wx.Frame):
         self.menuBar.Append(self.m_About, "About")
         # aboutItem = self.menuBar.Append(self.m_About, u"About")
 
+
+        self.m_Debug = wx.Menu()
+        self.m_Transform = wx.MenuItem(self.m_Debug, wx.ID_ANY, u"Transform data", wx.EmptyString,
+                                               wx.ITEM_NORMAL)
+        self.m_Debug.Append(self.m_Transform)
+        self.menuBar.Append(self.m_Debug, "Debug")
+        # aboutItem = self.menuBar.Append(self.m_About, u"About")
+
         self.Centre(wx.BOTH)
 
-        self.statusbar = self.CreateStatusBar(1)
+        self.statusbar = self.CreateStatusBar(2)
         self.statusbar.SetStatusText('')
+        self.statusbar.SetStatusText('', 1)
+
 
         #Binding
 
@@ -310,6 +322,7 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self.move_down, self.m_move_Down)
 
         self.Bind(wx.EVT_MENU, self.show_about, self.m_About_Description)
+        self.Bind(wx.EVT_MENU, self.transform_data, self.m_Transform)
 
         # Connect Enter Events
         self.m_Filter.Bind(wx.EVT_TEXT_ENTER, self.find_item)
@@ -414,11 +427,11 @@ class MainFrame(wx.Frame):
                 for i in range(len(txt)):
                     # split line
                     l = txt[i].split('\t')
-                    k = l[0].decode('utf-8')
+                    k = l[0]
                     # summon data for dict
                     l_val = list()
-                    l_val.append(l[1].strip().decode('utf-8'))
-                    l_val.append(l[2].strip().decode('utf-8'))
+                    l_val.append(l[1].strip())
+                    l_val.append(l[2].strip())
                     d[k] = l_val
                 self.d = d
         else:
@@ -508,7 +521,6 @@ class MainFrame(wx.Frame):
 
         # clear all
         self.clear_controls()
-        self.statusbar.SetStatusText("")
         self.d = dict()
         # Raname Title of window
         self.file = ""
@@ -529,7 +541,6 @@ class MainFrame(wx.Frame):
             self.SaveAs()
             return
         else:
-            print(self.file)
             f = open(self.file.decode('utf-8'), "wb")
             for k, v in self.d.items():
                 s = k + '\t' + v[0] + '\t' + v[1] + '\n'
@@ -564,12 +575,11 @@ class MainFrame(wx.Frame):
             # Raname Title of window
             self.SetTitle("Chainer - {0}".format(self.file.encode('utf-8')))
             f = open(self.file, "wb")
-            print(self.d)
             for k, v in self.d.items():
-                v1 = v[0]#.encode('utf-8')
-                v2 = v[1]#.encode('utf-8')
-                s = k + '\t' + v1 + '\t' + v2 + '\n'
-                f.write(s.encode('utf-8'))
+                v1 = v[0].encode('utf-8')
+                v2 = v[1].encode('utf-8')
+                s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
+                f.write(s)
             f.close()
         dlg.Destroy()
         #self.print_data()
@@ -647,8 +657,9 @@ class MainFrame(wx.Frame):
         else:
             d_trl = trl.take_trl(self.file, str(self.n_parent) + ":" + str(self.n))
         for k, v in d_trl.items():
-            item = [v, '']
-            self.d[k] = item
+            self.d[k] = d_trl[k]
+        #    item = [v, '']
+        #    self.d[k] = item
         self.clear_controls()
         self.set_value(self.n_parent, self.n)
         return
@@ -662,9 +673,8 @@ class MainFrame(wx.Frame):
                             "TreeLine files (*.trl)|*.trl",
                             style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
         if dlg.ShowModal() == wx.ID_OK:
-            #self.clear_controls()
-            self.file = dlg.GetPath().encode('utf-8')
-            trl.export_trl(self.file, self.d)
+            f_file = dlg.GetPath().encode('utf-8')
+            trl.result_gen_trl(f_file, self.d)
         else:
             dlg.Destroy()
             return
@@ -1129,28 +1139,22 @@ class MainFrame(wx.Frame):
                 for i in range(len(txt)):
                     # split line
                     l = txt[i].split('\t')
-                    if self.second_main_text.Value == '' and self.second_mnemo_text.Value == '':
-                        mask = str(self.n_parent)
-                    else:
-                        mask = str(self.n_parent) + ':' + str(self.n)
+                    mask = str(self.n_parent) + ':' + str(self.n)
                     # summon data for dict
                     l_val = list()
 
                     # exclude first element - 0  == '0: ...'
-                    l_key = l[0].split(":")
+                    l_key = l[0].strip(":")
 
                     for w in range(1, len(l_key)):
                         if not w == 1:
                             mask = mask.strip(":") + ":" + l_key[w]
-                            #print(mask)
                         else:
-                            mask = mask.strip(":") +":" + l_key[w]
-                            #print(mask)
-                    l_val.append(l[1].strip().decode('utf-8'))
-                    l_val.append(l[2].strip().decode('utf-8'))
+                            mask = mask.strip(":") + l_key[w]
+                    l_val.append(l[1].strip())
+                    l_val.append(l[2].strip())
 
-
-                    self.d[mask.decode('utf-8')] = l_val
+                    self.d[mask] = l_val
                 #self.d = d
         else:
             dlg.Destroy()
@@ -2123,6 +2127,7 @@ class MainFrame(wx.Frame):
         :return: 
         """
         self.statusbar.SetStatusText('')
+        self.statusbar.SetStatusText('', 1)
         # if root -> exit
         if self.n_parent == '0':
             return
@@ -2130,21 +2135,28 @@ class MainFrame(wx.Frame):
         par = self.n_parent
         result = ''
         l_res = list()
+        l_mnemo = list()
         for i in range(level):
             mask = par
             item = self.d[mask][0]
+            mnemo = self.d[mask][1]
             l_res.append(item)
+            l_mnemo.append(mnemo)
             par = par.rpartition(":")[0]
             if par == '0':
                 break
         l_res.reverse()
+        l_mnemo.reverse()
 
         # take just last 3 elements
         if len(l_res) > 3:
             result = l_res[-3] + " \\ " + l_res[-2] + " \\ " + l_res[-1]
+            res_mnemo = l_mnemo[-3] + " \\ " + l_mnemo[-2] + " \\ " + l_mnemo[-1]
         else:
             result = " \\ ".join(l_res)
+            res_mnemo = " \\ ".join(l_mnemo)
         self.statusbar.SetStatusText(result)
+        self.statusbar.SetStatusText(res_mnemo, 1)
 
     def show_configuration(self, e=0):
         """
@@ -2173,6 +2185,15 @@ class MainFrame(wx.Frame):
         self.dlg = DebugDialog(None)
         self.dlg.Show()
         return True
+
+    def transform_data(self, e=0):
+        """
+        Transform data
+        :return: 
+        """
+        l = trl.result_gen_trl(self.d)
+        #l = trl.transform_data(self.d)
+        return l
 
     def left_save(self):
         # take level

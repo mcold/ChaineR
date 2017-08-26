@@ -7,7 +7,6 @@ def take_trl(file, n_parent = '0'):
     :return: 
     """
     d = dict()
-    print(n_parent)
     with open(file.decode('utf-8'), "rb") as f:
         text = f.readlines()
         parent = n_parent
@@ -16,6 +15,7 @@ def take_trl(file, n_parent = '0'):
         st = False          # if block started
         cl = False          # if was Close tag
         item = ''
+        mnemo = ''
         for i in range(len(text)):
         # take name of main tag
             line = text[i]
@@ -28,7 +28,8 @@ def take_trl(file, n_parent = '0'):
                 if take_tag(text[i]) == tag and st == True:
                     if item:
                         mask = str(parent) + ":" + str(num)
-                        d[mask.decode('utf-8')] = item.decode('utf-8')
+                        line = [item, mnemo]
+                        d[mask] = line
                     # add level to mask
                     parent = str(parent) + ":" + str(num)
                     num = 1
@@ -43,7 +44,12 @@ def take_trl(file, n_parent = '0'):
 
                 # if block started and tag == 'Name' -> take text for item
                 if take_tag_name(text[i]) == 'Name' and st == True:
-                    item = take_text(text[i])
+                    item = take_text(text[i]).decode('utf-8')
+                    continue
+
+                # if block started and tag == 'Name' -> take text for item
+                if take_tag_name(text[i]) == 'mnemo' and st == True:
+                    mnemo = take_text(text[i]).decode('utf-8')
                     continue
 
                 # if item empty and block closed -> go to higher level
@@ -62,16 +68,15 @@ def take_trl(file, n_parent = '0'):
 
                     #if i == 14:
                     #    print("there")
-                    d[mask.decode('utf-8')] = item.decode('utf-8')
+                    line = [item, mnemo]
+                    d[mask] = line
 
 
                     # empty vars
                     st = False
                     cl = True
                     item = ''
-            if str(parent)[0] == ':':
-                parent = '0' + str(parent)
-        print(d)
+                    mnemo = ''
         return d
 
 def append_trl(file):
@@ -132,8 +137,6 @@ def append_trl(file):
                     st = False
                     cl = True
                     item = ''
-                if parent[0] == ':':
-                    parent = '0' + parent
         return d
 
 def take_tag(line):
@@ -164,7 +167,6 @@ def find_next(parent, d):
             except:
                 return 1
     if l:
-        print("l for next = " + str(l))
         return max(l)+1
     else:
         return 2
@@ -186,7 +188,6 @@ def export_trl(file, d):
     :return:
     """
     tag = 'DEFAULT'
-    print(d)
 
     with open(file, 'wb') as f:
         parent = '0'
@@ -208,87 +209,194 @@ def export_trl(file, d):
         for i in range(len(d)):
             mask = str(parent) + ':' + str(num)
             if d.get(mask):
-                print("-"*40)
-                print(mask)
-                #print(d[mask])
                 v = d[mask]
                 text = v[0]
                 mnemo = v[1]
-                line_tag = u'<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
-                line_name = u'<Name>{0}</Name>\n'.format(text)
-                line_mnemo = u'<mnemo>{0}</mnemo>\n'.format(mnemo)
-                close_tag = u'</DEFAULT>\n'
+                line_tag = '<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
+                line_name = '<Name>{0}</Name>\n'.format(text)
+                line_mnemo = '<mnemo>{0}</mnemo>\n'.format(mnemo)
+                close_tag = '</DEFAULT>\n'
 
                 # write data
-                f.write(line_tag.encode('utf-8'))
-                f.write(line_name.encode('utf-8'))
+                f.write(line_tag)
+                f.write(line_name)
                 if mnemo:
-                    f.write(line_mnemo.encode('utf-8'))
-                #num += 1
-                print("num - " + str(num))
-            else:
-                print("-" * 40)
-                print("I couldn't find " + mask)
-                f.write(close_tag)
-                try:
-                    parent = parent.rpartition(":")[0]
-                    i -= 1
-                    print("result parent - " + parent)
-                except:
-                    print("can't rpartition parent - " + str(parent))
-                    parent = "0"
-                continue
+                    f.write(line_mnemo)
 
-            if b_have_childs(d, mask):
-                print("-" * 40)
-                print(mask + " have child = " + str(b_have_childs(d, mask)))
-                parent = str(parent) + ':' + str(num)
-                print("result parent from child - " + str(parent))
-                num = 1
-                continue
-            else:
-                print("-" * 40)
-                print(mask + " - haven't childs")
-                f.write(close_tag)
-                # try to find next
-                next = num + 1
-                print("next - " + str(next))
-                new_mask = str(parent) + ":" + str(next)
-                print("try to find - " + str(new_mask))
-                if d.get(new_mask):
-                    #f.write(close_tag)
-                    print("-" * 40)
-                    print("found - " + str(new_mask))
-                    num = next
-                    print("num - " + str(num))
+                if b_have_childs(d, mask):
+                    parent = str(parent) + ':' + str(num)
+                    num = 1
                     continue
                 else:
                     f.write(close_tag)
-                    if i < len(d)-1:
+                    # try to find next
+                    next = find_next(parent, d)
+                    if d.get(next):
+                        num = next
+                        continue
+                    else:
                         f.write(close_tag)
-                    # go to higher level
-                    # and find next element
-                    print("didn't find " + new_mask)
-                    try:
-                        print("-" * 40)
-                        print("try to find new parent for " + str(parent))
-                        par = parent.rpartition(":")[0]
-                        print('par - ' + str(par))
-                        if par == '0':
-                            num = int(parent.rpartition(":")[-1]) + 1
-                            parent = '0'
-                            print("suppose a new num - " + str(num))
-                            continue
-                        ll = par.rpartition(":")
-                        new = int(ll[-1]) + 1                 # take next number
-                        parent = ll[0]       # form next number
-                        num = new
-                        print("new parent - " + str(parent))
-                    except:
-                        parent = "0"
-        #f.write(close_tag)        # close last item
-        #f.write(close_tag)        # close root
+                        # go to higher level
+                        try:
+                            parent = parent.rpartition(":")[0]
+                        except:
+                            parent = "0"
 
+
+
+def take_childs(d, mask):
+    """
+    Form list of childs it they are
+    Otherwise False
+    :param d: 
+    :param mask: 
+    :return: 
+    """
+    lev_mask = len(mask.split(":")) + 1
+    l_mask = list()
+    for k,v in d.items():
+        if len(k.split(":")) == lev_mask and k.startswith(mask):
+            l_mask.append(k)
+    if l_mask:
+        return l_mask
+    else:
+        return False
+
+
+
+
+def transform_data(d, n_parent = 0, num = 1, h_elem = []):
+    """
+    Transfrom data from trl to data intern structure
+    :return: 
+    """
+    __b_have_next = lambda parent, num: d.get(str(parent) + ":" + str(num+1))
+    __b_have_child = lambda parent, num: d.get(str(parent) + ":" + str(num))
+
+    ### 1) form dictionary of father-child
+
+    d_trans = dict()
+
+
+    for k,v in d.items():
+        elem = take_childs(d, k)
+        if take_childs(d, k):
+            d_trans[k] = elem
+        else:
+            d_trans[k] = k
+    return d_trans
+
+def take_max_branch(d):
+    """
+    Take number of branch out of range of dictionary
+    :param d: 
+    :return: 
+    """
+    pass
+
+
+def result_gen_trl(f_file, d):
+    close_tag = '</DEFAULT>\n'
+    name_file = (f_file.split(".")[0]).rpartition('\\')[-1]
+    first_line = "<?xml version='1.0' encoding='utf-8'?>\n"
+    second_line = '<DEFAULT item="y" line0="{*Name*}" line1="{*Name*}" tlversion="2.1.2" uniqueid=' + '"{0}">\n'.format(name_file)
+    # as root take name of file
+    root_line = '<Name idref="y" lines="3" type="Text">{0}</Name>\n'.format(name_file)
+    mnemo_line = '<mnemo type="Text" />\n'
+
+    parent = '0'
+
+    l_root = take_childs(d, parent)         # take high level of elements '0:1 ...'
+
+    l_root = resort(l_root)
+
+    d_trans = transform_data(d)             # take transformed data-dictionary
+
+    l_res = gen_cycle_tags(d, d_trans, l_root)      # list of tags
+
+    with open(f_file.decode('utf-8'), 'wb') as f:
+        f.write(first_line)
+        f.write(second_line)
+        f.write(root_line)
+        f.write(mnemo_line)
+        for i in range(len(l_res)):
+            f.write(l_res[i])
+        f.write(close_tag)
+
+
+def resort(l):
+    """
+    Sort masks of dictionary
+    :param l: 
+    :return: 
+    """
+    d_t = dict()
+    for i in range(len(l)):
+        d_t[int(l[i].split(":")[-1])] = l[i]
+    l_res = list()
+    for k, v in d_t.items():
+        l_res.append([k, v])
+        l_res.sort(key=lambda l: l[0])
+    l_new = list()
+    for j in range(len(l_res)):
+        l_new.append(l_res[j][1])
+    return l_new
+
+
+
+def gen_cycle_tags(d, d_trans, l_elem):
+    """
+    Generate list of tags for write to file trl-format
+    :param d: dictionary of program
+    :param d_trans: transfromed dictionary
+    :param l_elem: list of elements
+    :return: 
+    """
+    # typical tags:
+    tag = 'DEFAULT'
+    close_tag = '</DEFAULT>\n'
+
+
+    l_res = list()          # result list of tags
+    l_yet = list()          # list of element which used yet
+    parent = 0
+    num = 1
+
+    for i in range(len(l_elem)):
+        # prove if it is a list
+        elem = d_trans[l_elem[i]]
+        if type(elem) == list:
+            #elem = resort(elem)             # resort elements
+            v = d[l_elem[i]]
+            #d.pop(l_elem[i])
+            text = v[0]
+            mnemo = v[1]
+
+            line_tag = '<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
+            line_name = '<Name>{0}</Name>\n'.format(text)
+            line_mnemo = '<mnemo>{0}</mnemo>\n'.format(mnemo)
+            l_res.append(line_tag)
+            l_res.append(line_name)
+            l_e = gen_cycle_tags(d, d_trans, elem)  # result = list of tags
+            for j in range(len(l_e)):
+                l_res.append(l_e[j])
+            l_res.append(close_tag)
+        else:
+            if not l_elem[i] in l_yet:
+                v = d[l_elem[i]]
+                l_yet.append(l_elem[i])
+                #d.pop(l_elem[i])
+                text = v[0]
+                mnemo = v[1]
+
+                line_tag = '<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
+                line_name = '<Name>{0}</Name>\n'.format(text)
+                line_mnemo = '<mnemo>{0}</mnemo>\n'.format(mnemo)
+                l_res.append(line_tag)
+                l_res.append(line_name)
+                l_res.append(line_mnemo)
+                l_res.append(close_tag)
+    return l_res
 
 def b_have_childs(d, mask):
     """
@@ -298,10 +406,14 @@ def b_have_childs(d, mask):
     :return: boolean
     """
     for k, v in d.items():
-        if k.startswith(mask) and not k == mask:
+        if k.startswith(mask):
             return True
     return False
 
+def b_have_next(d, parent, num):
+    "Define if have next item"
+    mask = str(parent) + ":" + str(num+1)
+    return d.get(mask)
 
 if __name__ == '__main__':
     d = take_trl(file)

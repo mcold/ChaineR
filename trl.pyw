@@ -295,11 +295,11 @@ def take_max_branch(d):
     pass
 
 
-def result_gen_trl(f_file, d):
+def result_gen_trl(f_file, d, num = 1):
     close_tag = '</DEFAULT>\n'
     name_file = (f_file.split(".")[0]).rpartition('\\')[-1]
     first_line = "<?xml version='1.0' encoding='utf-8'?>\n"
-    second_line = '<DEFAULT item="y" line0="{*Name*}" line1="{*Name*}" tlversion="2.1.2" uniqueid=' + '"{0}">\n'.format(name_file)
+    second_line = '<DEFAULT item="y" line0="{*Name*}" line1="{*Name*}" tlversion="2.1.2" uniqueid="id_{0}"' + '"{0}">\n'.format(num)
     # as root take name of file
     root_line = '<Name idref="y" lines="3" type="Text">{0}</Name>\n'.format(name_file)
     mnemo_line = '<mnemo type="Text" />\n'
@@ -312,7 +312,8 @@ def result_gen_trl(f_file, d):
 
     d_trans = transform_data(d)             # take transformed data-dictionary
 
-    l_res = gen_cycle_tags(d, d_trans, l_root)      # list of tags
+    num += 1
+    l_res, num = gen_cycle_tags(d, d_trans, l_root, num)      # list of tags
 
     with open(f_file.decode('utf-8'), 'wb') as f:
         f.write(first_line)
@@ -320,7 +321,7 @@ def result_gen_trl(f_file, d):
         f.write(root_line)
         f.write(mnemo_line)
         for i in range(len(l_res)):
-            f.write(l_res[i])
+            f.write(l_res[i].encode('utf-8'))
         f.write(close_tag)
 
 
@@ -344,7 +345,7 @@ def resort(l):
 
 
 
-def gen_cycle_tags(d, d_trans, l_elem):
+def gen_cycle_tags(d, d_trans, l_elem, num = 1):
     """
     Generate list of tags for write to file trl-format
     :param d: dictionary of program
@@ -360,43 +361,46 @@ def gen_cycle_tags(d, d_trans, l_elem):
     l_res = list()          # result list of tags
     l_yet = list()          # list of element which used yet
     parent = 0
-    num = 1
 
     for i in range(len(l_elem)):
         # prove if it is a list
         elem = d_trans[l_elem[i]]
         if type(elem) == list:
+            num += 1
             #elem = resort(elem)             # resort elements
             v = d[l_elem[i]]
             #d.pop(l_elem[i])
             text = v[0]
             mnemo = v[1]
 
-            line_tag = '<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
-            line_name = '<Name>{0}</Name>\n'.format(text)
-            line_mnemo = '<mnemo>{0}</mnemo>\n'.format(mnemo)
+            line_tag = u'<DEFAULT item="y" uniqueid="id_{0}">\n'.format(num)
+            line_name = u'<Name>{0}</Name>\n'.format(text)
+            line_mnemo = u'<mnemo>{0}</mnemo>\n'.format(mnemo)
             l_res.append(line_tag)
             l_res.append(line_name)
-            l_e = gen_cycle_tags(d, d_trans, elem)  # result = list of tags
+            l_e, num = gen_cycle_tags(d, d_trans, elem, num)  # result = list of tags
             for j in range(len(l_e)):
                 l_res.append(l_e[j])
             l_res.append(close_tag)
+
         else:
             if not l_elem[i] in l_yet:
+                num += 1
                 v = d[l_elem[i]]
                 l_yet.append(l_elem[i])
                 #d.pop(l_elem[i])
                 text = v[0]
                 mnemo = v[1]
 
-                line_tag = '<DEFAULT item="y" uniqueid="{0}">\n'.format(text)
-                line_name = '<Name>{0}</Name>\n'.format(text)
-                line_mnemo = '<mnemo>{0}</mnemo>\n'.format(mnemo)
+                line_tag = u'<DEFAULT item="y" uniqueid="id_{0}">\n'.format(num)
+                line_name = u'<Name>{0}</Name>\n'.format(text)
+                line_mnemo = u'<mnemo>{0}</mnemo>\n'.format(mnemo)
                 l_res.append(line_tag)
                 l_res.append(line_name)
                 l_res.append(line_mnemo)
                 l_res.append(close_tag)
-    return l_res
+
+    return l_res, num
 
 def b_have_childs(d, mask):
     """
@@ -416,5 +420,4 @@ def b_have_next(d, parent, num):
     return d.get(mask)
 
 if __name__ == '__main__':
-    d = take_trl(file)
-    print_dict(d)
+    pass

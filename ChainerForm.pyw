@@ -4,6 +4,15 @@
 ## Ideas
 ## TODO: Export items current level
 ## TODO: restraint: not to export if none items
+## TODO: import (cr/trl/tetra) elements only to current level (not clear all tree)
+
+## BUGS:
+## TODO: export treeline - debug
+## TODO: load side must work with define number - now just list of rows
+## TODO: if insert element - childes stands empty
+## TODO: move elements not work
+## TODO: if write item and not to save -> exchange branches -> not saved item
+## TODO: reduce console
 ###########################################################################
 
 import wx
@@ -11,7 +20,6 @@ import trl
 import tetra
 from collections import defaultdict
 #import wx.xrc
-
 
 ###########################################################################
 ## Class MainFrame
@@ -25,6 +33,7 @@ class MainFrame(wx.Frame):
         self.b_ctrl_press = False
         self.b_alt_press = False
         self.b_shift_press = False
+        self.ext = ''                       # extension of using file
 
         # data
         #self.prev = 0
@@ -251,13 +260,38 @@ class MainFrame(wx.Frame):
         self.m_Ex_Branch = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Exchange sides", wx.EmptyString,
                                        wx.ITEM_NORMAL)
         self.m_Exchange.Append(self.m_Ex_Branch)
-        self.m_Move.AppendSeparator()
-        self.m_Left_Load = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Left load", wx.EmptyString,
-                                      wx.ITEM_NORMAL)
-        self.m_Exchange.Append(self.m_Left_Load)
-        self.m_Right_Load = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Right load", wx.EmptyString,
+        self.m_Merge_Branches = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Merge Branches", wx.EmptyString,
                                        wx.ITEM_NORMAL)
-        self.m_Exchange.Append(self.m_Right_Load)
+        self.m_Exchange.Append(self.m_Merge_Branches)
+
+        ### Load sides
+        self.m_Load_side = wx.Menu()
+        self.m_Left_Load = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Left", wx.EmptyString,
+                                              wx.ITEM_NORMAL)
+        #self.m_Exchange.Append(self.m_Left_Load)
+        self.m_Right_Load = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Right", wx.EmptyString,
+                                               wx.ITEM_NORMAL)
+        #self.m_Exchange.Append(self.m_Right_Load)
+        self.m_Load_side.Append(self.m_Left_Load)
+        self.m_Load_side.Append(self.m_Right_Load)
+        self.m_Exchange.Append(wx.NewId(), "Load side", self.m_Load_side)
+
+
+
+
+        ### Empty sides
+
+        self.m_Left_empty = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Left", wx.EmptyString,
+                                       wx.ITEM_NORMAL)
+        self.m_Right_empty = wx.MenuItem(self.m_Exchange, wx.ID_ANY, u"Right", wx.EmptyString,
+                                        wx.ITEM_NORMAL)
+        self.m_Empty = wx.Menu()
+        self.m_Empty.Append(self.m_Left_empty)
+        self.m_Empty.Append(self.m_Right_empty)
+        self.m_Exchange.Append(wx.NewId(), 'Make empty', self.m_Empty)
+
+        ####
+
         self.menuBar.Append(self.m_Exchange, "Exchange")
 
         self.m_About = wx.Menu()
@@ -271,7 +305,7 @@ class MainFrame(wx.Frame):
         self.m_Transform = wx.MenuItem(self.m_Debug, wx.ID_ANY, u"Transform data", wx.EmptyString,
                                                wx.ITEM_NORMAL)
         self.m_Debug.Append(self.m_Transform)
-        self.menuBar.Append(self.m_Debug, "Debug")
+        #self.menuBar.Append(self.m_Debug, "Debug")
         # aboutItem = self.menuBar.Append(self.m_About, u"About")
 
         self.Centre(wx.BOTH)
@@ -305,8 +339,12 @@ class MainFrame(wx.Frame):
         # self.Bind(wx.EVT_MENU, self.delete_item, self.m_DeleteItem)
 
         self.Bind(wx.EVT_MENU, self.exchange_mnemo_main, self.m_Ex_Branch)
+        self.Bind(wx.EVT_MENU, self.merge_Chainers, self.m_Merge_Branches)
         self.Bind(wx.EVT_MENU, self.left_side_load, self.m_Left_Load)
         self.Bind(wx.EVT_MENU, self.right_side_load, self.m_Right_Load)
+
+        self.Bind(wx.EVT_MENU, self.make_empty_left, self.m_Left_empty)
+        self.Bind(wx.EVT_MENU, self.make_empty_right, self.m_Right_empty)
 
         # self.Bind(wx.EVT_BUTTON, self.next_item, self.down_Btn)
         # self.Bind(wx.EVT_BUTTON, self.prev_item, self.upBtn)
@@ -329,16 +367,14 @@ class MainFrame(wx.Frame):
         self.second_main_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
         self.second_mnemo_text.Bind(wx.EVT_TEXT_ENTER, self.next_item)
 
-        # self.m_Mnemo.Bind(wx.EVT_KEY_DOWN, self.mnemo_condition)
-        # self.m_Mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_condition)
-        self.first_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_first)
-        self.second_mnemo_text.Bind(wx.EVT_SET_FOCUS, self.mnemo_second)
-        self.third_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_third)
-        self.m_Mnemo.Bind(wx.EVT_CHECKBOX, self.mnemo_hide)
+        #self.first_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_first)
+        #self.second_mnemo_text.Bind(wx.EVT_SET_FOCUS, self.mnemo_second)
+        #self.third_mnemo.Bind(wx.EVT_SET_FOCUS, self.mnemo_third)
+        # self.m_Mnemo.Bind(wx.EVT_CHECKBOX, self.mnemo_hide)
 
         ### TODO: debug
-        self.m_Mnemo.Hide()     # hide while not work
-        #self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
+        self.m_Mnemo.Hide()  # hide while not work
+        # self.third_mnemo.Bind(wx.EVT_MOTION, self.print_data)
 
         # HotKeys
         self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
@@ -349,21 +385,6 @@ class MainFrame(wx.Frame):
 
         self.Bind(wx.EVT_KEY_DOWN, self.onTextKeyEvent)
         self.menuBar.Bind(wx.EVT_KEY_DOWN, self.gen_StatusBar)
-
-        #self.second_main_text.Bind(wx.EVT_COMMAND_SCROLL_BOTTOM, self.next_item)
-        #self.second_main_text.Bind(wx.EVT_COMMAND_SCROLL, self.next_item)
-        #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.onMainToMnemo)
-
-        #s = u"Test"
-        #self.first_main.SetLabelText(s)
-        #self.third_main.SetLabelText(s)
-        #self.first_mnemo.SetLabelText(s)
-        #self.third_mnemo.SetLabelText(s)
-        # Key Down & Up
-        #self.second_main_text.Bind(wx.EVT_KEY_DOWN, self.next_item)
-
-        # Load file by default
-        #self.LoadFile()
 
         # set arrows
         self.set_arrows()
@@ -408,9 +429,27 @@ class MainFrame(wx.Frame):
         # Raname Title of window
         self.SetTitle("Chainer - {0}".format(self.file))
 
+
     def OpenFile(self, e=0):
+        d = self.take_data_from_Chainer()
+        if d:
+            self.d = d
+        else:
+            self.dlg = DebugDialog('No data in source or format not correct')
+            self.dlg.Show()
+
+        k = str(self.find_minimal())
+        self.n = 1
+        self.n_parent = k.rpartition(':')[0]
+        self.set_value(self.n_parent, self.n)
+        # self.n_parent = '0'
+
+        # Raname Title of window
+        self.SetTitle("Chainer - {0}".format(self.file))
+
+    def take_data_from_Chainer(self):
         """
-        Open choosen file
+        Open chosen file
         :param e: 
         :return: 
         """
@@ -422,33 +461,66 @@ class MainFrame(wx.Frame):
             self.file = dlg.GetPath().encode('utf-8')
             with open(self.file.decode('utf-8'), "rb") as f:
                 txt = f.readlines()
-                # txt = txt.split('\n')
+                #print(txt)
                 d = dict()
                 for i in range(len(txt)):
                     # split line
-                    l = txt[i].split('\t')
+                    line = txt[i].decode('utf-8')              # unicode
+                    l = line.split('\t')
                     k = l[0]
                     # summon data for dict
                     l_val = list()
                     l_val.append(l[1].strip())
                     l_val.append(l[2].strip())
                     d[k] = l_val
-                self.d = d
+                return d
         else:
             dlg.Destroy()
-            return
+            return False
 
         dlg.Destroy()
+
+    def merge_Chainers(self, e=0):
+        """
+        Merge data from import & current chainer
+        Priority to import chainer
+        :return:
+        """
+        # take data from import chainer
+        d_imp = self.take_data_from_Chainer()
+
+        # result dictionary
+        d_res = dict()
+
+        # import to result dictionary
+        for k,v in d_imp.items():
+            item = v[0]
+            mnemo = v[1]
+            if item == '':
+                try:
+                    item = self.d[k][0]
+                except:
+                    item = ''
+            if mnemo == '':
+                try:
+                    mnemo = self.d[k][1]
+                except:
+                    mnemo = ''
+            v = [item, mnemo]
+            d_res[k] = v
+
+
+        # if not in resutl dictonary -> write
+        for k,v in self.d.items():
+            if not d_res.get(k):
+                d_res[k] = v
+
+        self.d = d_res
 
         k = str(self.find_minimal())
         self.n = 1
         self.n_parent = k.rpartition(':')[0]
         self.set_value(self.n_parent, self.n)
-        #self.n_parent = '0'
-
-        # Raname Title of window
-        self.SetTitle("Chainer - {0}".format(self.file))
-
 
     def LoadFile(self, e=0):
         """
@@ -462,6 +534,44 @@ class MainFrame(wx.Frame):
                 self.OpenFile_First()
         except:
             pass
+
+    def make_empty_left(self, e=0):
+        """
+        Make left side empty
+        :param e:
+        :return:
+        """
+        self.make_empty_side(u'left')
+
+    def make_empty_right(self, e=0):
+        """
+        Make right side empty
+        :param e:
+        :return:
+        """
+        self.make_empty_side(u'right')
+
+
+    def make_empty_side(self, side):
+        """
+        Make empty chosen side
+        :param side:
+        :return:
+        """
+        if side == u'right':
+            for k,v in self.d.items():
+                item = v[0]
+                mnemo = ''
+                self.d[k] = [item, mnemo]
+
+        if side == u'left':
+            for k,v in self.d.items():
+                item = ''
+                mnemo = v[1]
+                self.d[k] = [item, mnemo]
+
+        self.clear_controls()
+        self.set_value(self.n_parent, self.n)
 
     def LastFiles(self, e=0):
         """
@@ -511,14 +621,6 @@ class MainFrame(wx.Frame):
         """
 
         self.m_Filter.SetValue('')
-
-        #self.m_Mnemo.Value = True
-        #self.m_Mnemo.SetValue(False)
-        #self.m_Mnemo
-        #self.first_mnemo.Show()
-        #self.second_mnemo_text.Show()
-        #self.third_mnemo.Show()
-
         # clear all
         self.clear_controls()
         self.d = dict()
@@ -526,6 +628,7 @@ class MainFrame(wx.Frame):
         self.file = ""
         self.SetTitle("Chainer")
         self.n = 1
+        self.set_arrows()
         #self.mnemo_hide()
 
     def Save(self, e=0):
@@ -548,10 +651,6 @@ class MainFrame(wx.Frame):
                     s = '0' + s
                 s = s.encode('utf-8')
                 f.write(s)
-        #with open(self.file, "wb") as f:
-        #    for k, v in self.d.items():
-        #        s = k + '\t' + v[0] + '\t' + v[1] + '\n'
-         #       f.write(s.encode('utf-8'))
 
     def SaveAs(self, e=0):
         """
@@ -563,8 +662,6 @@ class MainFrame(wx.Frame):
         self.add_item()
 
         style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT
-        #dlg = wx.FileDialog(self, "Save As",
-        #                        style=style)
         dlg = wx.FileDialog(self, "Save As", "", "",
                                       "ChaineR files (*.cr)|*.cr",
                                       wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
@@ -575,11 +672,28 @@ class MainFrame(wx.Frame):
             # Raname Title of window
             self.SetTitle("Chainer - {0}".format(self.file.encode('utf-8')))
             f = open(self.file, "wb")
-            for k, v in self.d.items():
-                v1 = v[0].encode('utf-8')
-                v2 = v[1].encode('utf-8')
-                s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
-                f.write(s)
+
+            l_rekey, d_rekey = self.sorting_dict()
+            print(l_rekey)
+            print(d_rekey)
+            # l_rekey - sorted retranslated numbers
+            # d_rekey - hash format: [number] = key
+            for i in range(len(l_rekey)):
+                k = l_rekey[i]
+                key = d_rekey[str(k)]
+                v = self.d[key]
+                item = v[0]
+                mnemo = v[1]
+                s = key + '\t' + item + '\t' + mnemo + '\n'
+                f.write(s.encode('utf-8'))
+
+            #for k, v in self.d.items():
+            #    v1 = v[0]#.encode('utf-8')
+            #    v2 = v[1]#.encode('utf-8')
+                #s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
+            #    s = k + '\t' + v1 + '\t' + v2 + '\n'
+                #print(s)
+            #    f.write(s.encode('utf-8'))
             f.close()
         dlg.Destroy()
         #self.print_data()
@@ -612,6 +726,7 @@ class MainFrame(wx.Frame):
             # Raname Title of window
             self.SetTitle("Chainer - {0}".format(self.file.encode('utf-8')))
             f = open(self.file, "wb")
+            print(self.d)
             for k, v in self.d.items():
                 v1 = v[0].encode('utf-8')
                 v2 = v[1].encode('utf-8')
@@ -619,8 +734,8 @@ class MainFrame(wx.Frame):
                     v2 = ''
                 if side == 'right':
                     v1 = ''
-                s = k + '\t'.encode('utf-8') + v1 + '\t'.encode('utf-8') + v2 + '\n'.encode('utf-8')
-                f.write(s)
+                s = k.decode('utf-8') + '\t' + v1.decode('utf-8')  + '\t' + v2.decode('utf-8') + '\n'
+                f.write(s.encode('utf-8'))
             f.close()
         dlg.Destroy()
         self.print_data()
@@ -681,8 +796,6 @@ class MainFrame(wx.Frame):
 
         dlg.Destroy()
 
-
-    ### TODO: realize
     def import_tetra(self, e=0):
         """
         Import tetra
@@ -705,6 +818,7 @@ class MainFrame(wx.Frame):
         mask = str(self.n_parent) + ":" + str(self.n)
         if not self.d.get(mask):
             d_tetra = tetra.take_tetra(self.file, self.n_parent)
+            print(d_tetra)
         else:
             d_tetra = tetra.take_tetra(self.file, str(self.n_parent) + ":" + str(self.n))
         for k, v in d_tetra.items():
@@ -721,7 +835,22 @@ class MainFrame(wx.Frame):
         :param e: 
         :return: 
         """
-        self.show_debug()
+        dlg = wx.DirDialog(None, "Choose input directory", "",
+                           wx.DD_DEFAULT_STYLE | wx.DD_DIR_MUST_EXIST)
+        #dlg = wx.FileDialog(self, "Open File", "", "",
+        #                    "Mytetra (*.xml)|*.xml",
+
+#                            style=wx.FD_CHANGE_DIR)# | wx.FD_OVERWRITE_PROMPT)
+        if dlg.ShowModal() == wx.ID_OK:
+            m_dir = dlg.GetPath().encode('utf-8')
+            f_file = m_dir + r'\mytetra.xml'.encode('utf-8')
+            print(f_file)
+            tetra.result_gen_tetra(f_file, self.d)
+        else:
+            dlg.Destroy()
+            return
+
+        dlg.Destroy()
 
     def export_anki(self, e=0):
         """
@@ -746,19 +875,21 @@ class MainFrame(wx.Frame):
                 ask = v[0]
                 mnemo = v[1]
                 ans = self.take_anki_childs_line(k)
-                line = ask + sep + mnemo + sep + ans + '\n'
+                line = ask + sep + mnemo + sep + ans + u'\n'
                 f.write(line.encode('utf-8'))
             f.close()
         dlg.Destroy()
         # self.show_debug()
 
     def take_anki_childs_line(self, parent_mask):
-        """"Take childs for anki items"""
+        """"
+        Take childs for anki items
+        """
         l_items = list()
         level = len(parent_mask.split(":")) + 1
         for k, v in self.d.items():
             if len(k.split(":")) == level and k.startswith(parent_mask):
-                value = str(v[0]) + '\t' + str(v[1])
+                value = v[0] + u'\t' + v[1]
                 l_items.append(value)
 
         # form line of anki deck
@@ -766,7 +897,7 @@ class MainFrame(wx.Frame):
             return ''
         line = l_items[0]
         for i in range(1, len(l_items)):
-            div = r'<div>' + str(l_items[i]) + r"</div>"
+            div = u'<div>' + str(l_items[i]) + u"</div>"
             line = line + div
 
         return line
@@ -866,7 +997,10 @@ class MainFrame(wx.Frame):
             self.set_value(self.n_parent, self.n)
             self.leftBtn.Show()
         self.set_arrows()
-        self.gen_StatusBar()
+        if not (self.second_main_text.Value == '' and self.second_mnemo_text.Value == ''):
+            self.gen_StatusBar()
+
+        self.b_ctrl_press = False
         return
         # take child as first
 
@@ -889,6 +1023,7 @@ class MainFrame(wx.Frame):
         self.n_parent = self.n_parent.rpartition(':')[0]
 
         self.set_value(self.n_parent, self.n)
+        self.b_ctrl_press = False
         return
 
 
@@ -1310,6 +1445,7 @@ class MainFrame(wx.Frame):
                 self.first_mnemo.SetLabelText(self.d[mask][1])
             except:
                 pass
+        self.set_arrows()
 
     def insert_item(self, e=0):
         """
@@ -2136,6 +2272,8 @@ class MainFrame(wx.Frame):
         result = ''
         l_res = list()
         l_mnemo = list()
+        #print(self.d)
+        #print(par)
         for i in range(level):
             mask = par
             item = self.d[mask][0]
@@ -2222,16 +2360,14 @@ class MainFrame(wx.Frame):
 
     def onMnemoToMain(self):
         """Change focus from mnemo to main"""
-        self.second_mnemo_text.SetFocus()
+        self.second_main_text.SetFocus()
 
     def onTextKeyEvent(self, event):
         """
         HotKeys
         """
-
         keycode = event.GetKeyCode()
-        if keycode == wx.WXK_RIGHT:
-            self.child_item()
+
 
         if keycode == wx.WXK_ESCAPE:
             self.CloseWin()
@@ -2248,10 +2384,18 @@ class MainFrame(wx.Frame):
 
         ###
         # change focus
-        if keycode == wx.WXK_TAB and self.second_main_text.HasFocus():
-            self.onMainToMnemo()
+
+        if keycode == wx.WXK_RIGHT and self.b_ctrl_press:
+            self.child_item()
+            return
         if keycode == wx.WXK_TAB and self.second_mnemo_text.HasFocus():
             self.onMnemoToMain()
+            return
+
+        if keycode == wx.WXK_TAB and self.second_main_text.HasFocus():
+            self.onMainToMnemo()
+            return
+
         ###
 
         if keycode == wx.WXK_HOME:
@@ -2260,8 +2404,9 @@ class MainFrame(wx.Frame):
 
 
 
-        if keycode == wx.WXK_LEFT:
+        if keycode == wx.WXK_LEFT and self.b_ctrl_press:
             self.parent_item()
+            return
 
         if keycode == wx.WXK_UP:
             self.prev_item(0)
@@ -2324,7 +2469,18 @@ class MainFrame(wx.Frame):
         self.b_shift_press = False
         event.Skip()
 
-        self.gen_StatusBar()
+        if not (self.second_main_text.Value == '' and self.second_mnemo_text.Value == ''):
+            self.gen_StatusBar()
+
+    def take_max_level(self):
+         """
+         Define max level parentage in dictionary
+         :return:
+         """
+         level = 0
+         for k, v in self.d.items():
+             level = max(level, len(k.split(":")))
+         return level
 
     def sorting_dict(self):
         """
@@ -2332,19 +2488,22 @@ class MainFrame(wx.Frame):
         """
         ### take length of key and write in new dictionary repaired number without dots
         d_rekey = dict()
-        # take level of number
-        level = len(max((self.d)))
-        l_res_key = list()
-        for k in self.d.items():
-            # renum key
-            res_key = "".join([x for x in k.split(':')])
-            delta = level - len(res_key)                         # number of zeros
-            res_key = int(res_key + str('0'*delta))
-            d_rekey[key] = res_key
-            l_res_key.append(res_key)                            # combine numbers
-        l_res_key.sort()                                         # sort numbers
-        ### TODO: write numbers to file
-        ### TODO: in argument - file and extension
+        l_rekey = list()
+        # take max level of hash
+        level = self.take_max_level()
+        for k,v in self.d.items():
+            l_key = k.split(":")
+            delta = level - len(l_key)
+            new_key = ("".join(l_key) + str(0)*delta)[1:]
+            d_rekey[new_key] = k
+            l_rekey.append(int(new_key))
+        l_rekey.sort()
+        return l_rekey, d_rekey
+
+
+
+
+
 
 class AboutDialog(wx.Dialog):
     def __init__(self, parent):
@@ -2371,17 +2530,20 @@ class AboutDialog(wx.Dialog):
 
 
 class DebugDialog(wx.Dialog):
-    def __init__(self, parent):
-        wx.Dialog.__init__(self, parent, id=wx.ID_ANY, title=u"Debug", pos=wx.DefaultPosition, size=wx.Size(400, 125),
+    def __init__(self, t_text = ''):
+        wx.Dialog.__init__(self, None, id=wx.ID_ANY, title=u"Debug", pos=wx.DefaultPosition, size=wx.Size(400, 125),
                            style=wx.DEFAULT_DIALOG_STYLE)
 
         self.SetSizeHints(wx.DefaultSize, wx.DefaultSize)
 
         bSizer1 = wx.BoxSizer(wx.VERTICAL)
-
-        self.m_staticText5 = wx.StaticText(self, wx.ID_ANY,
-                                           u"Current element in process of realization\nComing soon\n\nAll information you can receive at https://github.com/mcold/ChaineR",
+        if not t_text:
+            self.m_staticText5 = wx.StaticText(self, wx.ID_ANY, u"Current element in process of realization\nComing soon\n\nAll information you can receive at https://github.com/mcold/ChaineR",
                                            wx.DefaultPosition, wx.DefaultSize, 0)
+        else:
+            self.m_staticText5 = wx.StaticText(self, wx.ID_ANY,
+                                               u"{0}".format(t_text),
+                                               wx.DefaultPosition, wx.DefaultSize, 0)
         self.m_staticText5.Wrap(-1)
         bSizer1.Add(self.m_staticText5, 0, wx.ALL, 5)
 
